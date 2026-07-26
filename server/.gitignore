@@ -1,0 +1,52 @@
+# Dependencies (Never commit node_modules)
+node_modules/
+/node_modules
+
+# Environment Variables & Secrets (CRITICAL for security)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Temporary files & uploads (Multer / Cloudinary local temp files)
+uploads/
+temp/
+*.tmp
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE and Editor Files
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+
+# Build or Dist files (if typescript or transpiled)
+dist/
+build/
