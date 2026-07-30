@@ -1,33 +1,36 @@
 {
-  "name": "client",
+  "name": "jovac-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "@react-oauth/google": "^0.13.5",
-    "axios": "^1.18.1",
+    "@react-oauth/google": "^0.12.1",
+    "axios": "^1.7.2",
     "leaflet": "^1.9.4",
-    "lucide-react": "^1.27.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "lucide-react": "^0.511.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
-    "react-router-dom": "^7.18.1",
-    "socket.io-client": "^4.8.3"
+    "react-router-dom": "^6.24.0",
+    "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
-    "autoprefixer": "^10.5.4",
-    "oxlint": "^1.71.0",
-    "postcss": "^8.5.23",
-    "tailwindcss": "^4.3.3",
-    "vite": "^8.1.1"
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.2",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.7",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "vite": "^5.3.1"
   }
 }
