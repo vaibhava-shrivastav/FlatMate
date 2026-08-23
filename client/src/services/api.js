@@ -23,7 +23,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const originalUrl = error.config?.url || '';
+    const isAuthRequest = originalUrl.includes('/auth/login') || originalUrl.includes('/auth/register') || originalUrl.includes('/auth/google');
+    
+    if (error.response?.status === 401 && !isAuthRequest) {
       tokenManager.remove();
       window.location.href = '/login';
     }
