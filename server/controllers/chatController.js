@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Message = require("../models/Message");
 
 exports.getChatHistory = async (req, res) => {
@@ -13,7 +14,7 @@ exports.getChatHistory = async (req, res) => {
 exports.getUserChats = async (req, res) => {
   try {
     const chats = await Message.aggregate([
-      { $match: { participants: req.user.id } },
+      { $match: { participants: new mongoose.Types.ObjectId(req.user.id) } },
       { $group: { _id: "$chatId", lastMessage: { $last: "$text" } } },
     ]);
     res.status(200).json({ chats });

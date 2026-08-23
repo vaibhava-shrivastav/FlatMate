@@ -27,7 +27,7 @@ app.use("/api/matches", matchRoutes);
 app.use(errorMiddleware);
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: process.env.CLIENT_URL } });
+const io = new Server(server, { cors: { origin: process.env.CLIENT_URL, credentials: true } });
 registerChatSocket(io);
 
 const PORT = process.env.PORT || 5000;

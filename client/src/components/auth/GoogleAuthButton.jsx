@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { cn } from '@utils/cn';
 import authService from '@services/authService';
+import tokenManager from '@services/tokenManager';
 
 function GoogleIcon() {
   return (
@@ -27,8 +28,6 @@ function GoogleIcon() {
     </svg>
   );
 }
-
-import tokenManager from '@services/tokenManager';
 
 export default function GoogleAuthButton({ label = 'Continue with Google', className }) {
   const { login } = useAuth();
