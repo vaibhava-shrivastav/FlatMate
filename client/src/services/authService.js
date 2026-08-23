@@ -17,7 +17,7 @@ const authService = {
   },
 
   async getCurrentUser() {
-    const { data } = await api.get('/auth/me');
+    const { data } = await api.get('/users/me');
     return data.user ?? data;
   },
 

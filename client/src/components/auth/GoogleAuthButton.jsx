@@ -28,6 +28,8 @@ function GoogleIcon() {
   );
 }
 
+import tokenManager from '@services/tokenManager';
+
 export default function GoogleAuthButton({ label = 'Continue with Google', className }) {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -39,8 +41,11 @@ export default function GoogleAuthButton({ label = 'Continue with Google', class
     setError('');
     try {
       const data = await authService.googleLogin(tokenResponse.access_token);
-      // Server returns { token, isNewUser } — no user object
-      login(null, data.token);
+      // Store token so the API interceptor can use it for the next request
+      tokenManager.set(data.token);
+      // Now fetch the full user profile
+      const user = await authService.getCurrentUser();
+      login(user, data.token);
       navigate(data.isNewUser ? '/onboarding' : '/dashboard', { replace: true });
     } catch {
       setError('Google sign-in failed. Please try again.');
