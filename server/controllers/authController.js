@@ -47,8 +47,10 @@ exports.googleAuth = async (req, res) => {
   try {
     const { access_token } = req.body;
     
+    console.log("[GoogleAuth] Received request, access_token present:", !!access_token);
+    
     if (!access_token) {
-      throw new Error("No access_token provided.");
+      return res.status(400).json({ message: "No access_token provided." });
     }
 
     const payload = await new Promise((resolve, reject) => {
@@ -62,6 +64,7 @@ exports.googleAuth = async (req, res) => {
         let data = '';
         response.on('data', (chunk) => data += chunk);
         response.on('end', () => {
+          console.log("[GoogleAuth] Google API response status:", response.statusCode);
           if (response.statusCode >= 200 && response.statusCode < 300) {
             resolve(JSON.parse(data));
           } else {
@@ -69,9 +72,14 @@ exports.googleAuth = async (req, res) => {
           }
         });
       });
-      request.on('error', reject);
+      request.on('error', (err) => {
+        console.error("[GoogleAuth] Network error calling Google API:", err.message);
+        reject(err);
+      });
       request.end();
     });
+
+    console.log("[GoogleAuth] Got user info for:", payload.email);
 
     let user = await User.findOne({ googleId: payload.sub });
     let isNewUser = false;
@@ -96,7 +104,7 @@ exports.googleAuth = async (req, res) => {
 
     res.status(200).json({ token: signToken(user._id), isNewUser });
   } catch (err) {
-    console.error("Google Auth Error:", err);
+    console.error("[GoogleAuth] Error:", err.message, err.stack);
     res.status(401).json({ message: "Google authentication failed.", error: err.message });
   }
 };
