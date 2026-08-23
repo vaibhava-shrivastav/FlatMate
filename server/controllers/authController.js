@@ -41,6 +41,8 @@ exports.login = async (req, res) => {
   }
 };
 
+const https = require('https');
+
 exports.googleAuth = async (req, res) => {
   try {
     const { access_token } = req.body;
@@ -49,28 +51,52 @@ exports.googleAuth = async (req, res) => {
       throw new Error("No access_token provided.");
     }
 
-    client.setCredentials({ access_token });
-    const response = await client.request({ 
-      url: 'https://www.googleapis.com/oauth2/v3/userinfo' 
+    const payload = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'www.googleapis.com',
+        path: '/oauth2/v3/userinfo',
+        method: 'GET',
+        headers: { Authorization: `Bearer ${access_token}` }
+      };
+      const request = https.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => data += chunk);
+        response.on('end', () => {
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            resolve(JSON.parse(data));
+          } else {
+            reject(new Error(`Google API error: ${response.statusCode} ${data}`));
+          }
+        });
+      });
+      request.on('error', reject);
+      request.end();
     });
-    
-    const payload = response.data;
 
     let user = await User.findOne({ googleId: payload.sub });
     let isNewUser = false;
 
     if (!user) {
-      user = await User.create({
-        name: payload.name,
-        email: payload.email,
-        googleId: payload.sub,
-        authProvider: "google",
-      });
-      isNewUser = true;
+      user = await User.findOne({ email: payload.email });
+      if (user) {
+        // Link Google account to existing email user
+        user.googleId = payload.sub;
+        await user.save();
+      } else {
+        // Create brand new user
+        user = await User.create({
+          name: payload.name,
+          email: payload.email,
+          googleId: payload.sub,
+          authProvider: "google",
+        });
+        isNewUser = true;
+      }
     }
 
     res.status(200).json({ token: signToken(user._id), isNewUser });
   } catch (err) {
+    console.error("Google Auth Error:", err);
     res.status(401).json({ message: "Google authentication failed.", error: err.message });
   }
 };
