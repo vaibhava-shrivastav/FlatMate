@@ -45,15 +45,16 @@ exports.googleAuth = async (req, res) => {
   try {
     const { access_token } = req.body;
     
-    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${access_token}` }
+    if (!access_token) {
+      throw new Error("No access_token provided.");
+    }
+
+    client.setCredentials({ access_token });
+    const response = await client.request({ 
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo' 
     });
     
-    if (!response.ok) {
-      throw new Error("Failed to fetch user profile from Google.");
-    }
-    
-    const payload = await response.json();
+    const payload = response.data;
 
     let user = await User.findOne({ googleId: payload.sub });
     let isNewUser = false;
