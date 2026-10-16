@@ -23,21 +23,32 @@ function heuristicFallbackScore(userA, userB) {
 
 // ---- Step 1: Find possible roommate candidates for a user ----
 async function findCandidates(user) {
-  // If user is searching for a room, we want people who HAVE a room, and vice versa
+  const hasValidLocation =
+    user.location &&
+    user.location.type === "Point" &&
+    Array.isArray(user.location.coordinates) &&
+    user.location.coordinates.length === 2 &&
+    !(user.location.coordinates[0] === 0 && user.location.coordinates[1] === 0);
+
   const oppositeRole =
     user.role === "SEARCHING_ROOM" ? "HAS_ROOM" : "SEARCHING_ROOM";
 
-  return User.find({
-    _id: { $ne: user._id }, // exclude the user themself
+  const query = {
+    _id: { $ne: user._id },
     role: oppositeRole,
-    onboardingComplete: true, // only fully-set-up profiles
-    location: {
+    onboardingComplete: true,
+  };
+
+  if (hasValidLocation) {
+    query.location = {
       $near: {
         $geometry: user.location,
-        $maxDistance: 15000, // within 15km
+        $maxDistance: 15000,
       },
-    },
-  }).limit(20); // don't fetch too many at once
+    };
+  }
+
+  return User.find(query).limit(20);
 }
 
 // ---- Step 2: Get a match's compatibility, using cache first ----

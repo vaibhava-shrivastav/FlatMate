@@ -19,10 +19,17 @@ async function evaluateCompatibility(userA, userB) {
     )}\nUser B: ${JSON.stringify(userB.habitVector)}`;
 
     // Call Gemini API
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-    });
+    const GEMINI_TIMEOUT_MS = 10000;
+
+    const response = await Promise.race([
+      ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Gemini API timeout after 10s")), GEMINI_TIMEOUT_MS)
+      ),
+    ]);
 
     // Gemini sometimes wraps JSON in ```json ``` code fences — strip those off
     const raw = response.text.replace(/```json|```/g, "").trim();
