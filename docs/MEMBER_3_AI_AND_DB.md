@@ -1,5 +1,178 @@
 # MEMBER 3 — Gemini Integration & Database Architect
 
+## Fix Order
+
+| # | Fix Title | Severity | File | Depends on |
+|---|-----------|----------|------|------------|
+| 1 | Location field optional but geo query requires it | Critical | `server/models/User.js` | — |
+| 2 | findCandidates crashes on missing location | Medium | `server/services/matchingEngine.js` | Fix 1 (same doc) |
+| 3 | Match cache never expires | Medium | `server/services/matchingEngine.js`, `server/models/Match.js` | — |
+| 4 | Gemini API call has no timeout | Low | `server/services/geminiService.js` | — |
+| 5 | Match documents accumulate indefinitely | Low | `server/models/Match.js` | — |
+
+---
+
+## Fix 1: Location field optional but geo query requires it (AUDIT ref: Critical)
+
+- **File:** `server/models/User.js:49-58`
+- **Why:** The `location` field has no `default` or `required` constraint. When a user is created without location data, the coordinates are `undefined`, which causes the `$near` geo query in `findCandidates` to either throw a MongoDB error or silently return nothing.
+- **Change:**
+
+The location field should remain optional (users set it during onboarding), but we add a default that is explicitly `undefined` so it's clear there's no location, and the guard lives in `matchingEngine.js` (Fix 2). No schema change is strictly needed, but to improve clarity:
+
+```javascript
+// BEFORE (lines 49-58)
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+      },
+      coordinates: {
+        type: [Number],
+      },
+    },
+
+// AFTER — no change needed here; the real fix is the guard in matchingEngine.js (Fix 2).
+// However, remove any default: [0,0] if it exists in your local copy, because [0,0]
+// is a valid GeoJSON point (Null Island) and would produce wrong $near results.
+```
+
+The onboarding flow (Member 1's `OnboardingQuiz.jsx` or a separate location step) should collect location. This is a coordination item — see **MEMBER_4_LEAD_INTEGRATOR.md** for the cross-member note.
+
+- **Verify:** Create a user via `POST /api/auth/register` without setting location → `user.location` should be `undefined`, not `{ type: "Point", coordinates: [0, 0] }`.
+- **Commit:** `git add server/models/User.js && git commit -m "fix(model): clarify location field is intentionally optional, remove misleading defaults"`
+
+---
+
+## Fix 2: findCandidates crashes on missing location (AUDIT ref: Medium)
+
+- **File:** `server/services/matchingEngine.js:25-41`
+- **Why:** `findCandidates` passes `user.location` directly to `$near.$geometry`. If the user has no location set, MongoDB throws `"$near requires a geojson point"`.
+- **Change:**
+
+```javascript
+// BEFORE (lines 25-41)
+async function findCandidates(user) {
+  const oppositeRole =
+    user.role === "SEARCHING_ROOM" ? "HAS_ROOM" : "SEARCHING_ROOM";
+
+  return User.find({
+    _id: { $ne: user._id },
+    role: oppositeRole,
+    onboardingComplete: true,
+    location: {
+      $near: {
+        $geometry: user.location,
+        $maxDistance: 15000,
+      },
+    },
+  }).limit(20);
+}
+
+// AFTER
+async function findCandidates(user) {
+  // Guard: if user has no valid location, skip geo query entirely
+  const hasValidLocation =
+    user.location &&
+    user.location.type === "Point" &&
+    Array.isArray(user.location.coordinates) &&
+    user.location.coordinates.length === 2 &&
+    !(user.location.coordinates[0] === 0 && user.location.coordinates[1] === 0);
+
+  const oppositeRole =
+    user.role === "SEARCHING_ROOM" ? "HAS_ROOM" : "SEARCHING_ROOM";
+
+  const query = {
+    _id: { $ne: user._id },
+    role: oppositeRole,
+    onboardingComplete: true,
+  };
+
+  if (hasValidLocation) {
+    query.location = {
+      $near: {
+        $geometry: user.location,
+        $maxDistance: 15000,
+      },
+    };
+  }
+  // If no valid location, return candidates without distance filtering
+
+  return User.find(query).limit(20);
+}
+```
+
+- **Verify:** Create a user without location → call `GET /api/matches` → should return candidates (without geo filtering) instead of crashing.
+- **Commit:** `git add server/services/matchingEngine.js && git commit -m "fix(matching): guard findCandidates against missing or invalid user location"`
+
+---
+
+## Fix 3: Match cache never expires (AUDIT ref: Medium)
+
+- **File:** `server/models/Match.js:41` + `server/services/matchingEngine.js:44-72`
+- **Why:** Once a Match document is created, it stays forever. If a user updates their habit vector, the cached score becomes stale and is never re-evaluated.
+- **Change:**
+
+In `server/models/Match.js`, add a TTL index:
+
+```javascript
+// BEFORE (line 41)
+matchSchema.index({ userA: 1, userB: 1 }, { unique: true });
+
+// AFTER (add a new index below the existing one)
+matchSchema.index({ userA: 1, userB: 1 }, { unique: true });
+matchSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 7 }); // 7-day TTL
+```
+
+No change needed in `matchingEngine.js` — `getOrEvaluateMatch` already re-creates the match if `findOne` returns null (cache miss), which is exactly what happens after the TTL deletes the old document.
+
+- **Verify:** Check the MongoDB index: `db.matches.getIndexes()` → should show a TTL index on `createdAt` with `expireAfterSeconds: 604800`.
+- **Commit:** `git add server/models/Match.js && git commit -m "fix(model): add 7-day TTL index on Match.createdAt to expire stale cache"`
+
+---
+
+## Fix 4: Gemini API call has no timeout (AUDIT ref: Low)
+
+- **File:** `server/services/geminiService.js:22-25`
+- **Why:** If Gemini is unresponsive, `evaluateCompatibility` hangs indefinitely, blocking the matching pipeline for the requesting user.
+- **Change:**
+
+```javascript
+// BEFORE (lines 21-25)
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt,
+    });
+
+// AFTER — wrap in Promise.race with a 10-second timeout
+    const GEMINI_TIMEOUT_MS = 10000;
+
+    const response = await Promise.race([
+      ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: prompt,
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Gemini API timeout after 10s")), GEMINI_TIMEOUT_MS)
+      ),
+    ]);
+```
+
+- **Verify:** Temporarily set `GEMINI_TIMEOUT_MS` to 1 → the call should fail fast and fall back to heuristic scoring.
+- **Commit:** `git add server/services/geminiService.js && git commit -m "fix(gemini): add 10s timeout to prevent indefinite hangs"`
+
+---
+
+## Fix 5: Match documents accumulate indefinitely (AUDIT ref: Low)
+
+- **File:** `server/models/Match.js:34-37`
+- **Why:** Without TTL, match documents grow unbounded, wasting storage.
+- **Change:** Already addressed by **Fix 3** (the TTL index). No separate change needed.
+- **Verify:** See Fix 3.
+- **Commit:** Combined with Fix 3.
+
+---
+
 ## 1. Setup Guide
 
 ```bash

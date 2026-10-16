@@ -1,10 +1,20 @@
 require("dotenv").config();
+
+// ── Validate required environment variables ──────────────────────────
+const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET", "CLIENT_URL"];
+const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missing.length) {
+  console.error(`❌ Missing required env vars: ${missing.join(", ")}`);
+  process.exit(1);
+}
+
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 const connectDB = require("./config/db");
 const errorMiddleware = require("./middleware/errorMiddleware");
+const morgan = require("morgan");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -17,12 +27,23 @@ const registerChatSocket = require("./sockets/chatSocket");
 const app = express();
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/listings", listingRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/matches", matchRoutes);
+
+const path = require("path");
+
+// Serve React production build in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../client/dist")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
+  });
+}
 
 app.use(errorMiddleware);
 
