@@ -24,11 +24,31 @@ module.exports = function registerChatSocket(io) {
     socket.on("sendMessage", async ({ chatId, senderId, text, participants }) => {
       try {
         if (!text?.trim()) return;
-        const message = await Message.create({ chatId, senderId, text, participants });
+
+        // Validate: senderId must match the authenticated socket user
+        if (senderId && senderId !== socket.userId) {
+          return socket.emit("errorMessage", { message: "Sender ID mismatch." });
+        }
+
+        // Use the authenticated userId as the sender (ignore client-supplied senderId)
+        const message = await Message.create({
+          chatId,
+          senderId: socket.userId,
+          text,
+          participants,
+        });
         io.to(chatId).emit("receiveMessage", message);
       } catch (err) {
         socket.emit("errorMessage", { message: "Failed to send message." });
       }
+    });
+
+    socket.on("user_typing", (chatId) => {
+      socket.to(chatId).emit("user_typing", { userId: socket.userId });
+    });
+
+    socket.on("user_stop_typing", (chatId) => {
+      socket.to(chatId).emit("user_stop_typing", { userId: socket.userId });
     });
 
     socket.on("disconnect", () => {
