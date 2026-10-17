@@ -53,8 +53,21 @@ registerChatSocket(io);
 
 const PORT = process.env.PORT || 5000;
 
+const Listing = require("./models/Listing");
+const seed = require("./scripts/seed");
+
 connectDB()
-  .then(() => {
+  .then(async () => {
+    try {
+      const count = await Listing.countDocuments();
+      if (count === 0) {
+        console.log("No listings found. Auto-seeding initial demo data...");
+        await seed({ manageConnection: false });
+      }
+    } catch (e) {
+      console.warn("Auto-seed check skipped:", e.message);
+    }
+
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
     });

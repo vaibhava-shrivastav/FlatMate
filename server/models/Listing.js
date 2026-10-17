@@ -29,8 +29,19 @@ const listingSchema = new mongoose.Schema(
         type: [Number], // [longitude, latitude]
         required: true, // listings must have a location (unlike User, no default)
       },
+      city: { type: String, default: "" },
+      area: { type: String, default: "" },
+      address: { type: String, default: "" },
     },
 
+    description: { type: String, default: "" },
+    roomType: {
+      type: String,
+      enum: ["private", "shared", "studio", "entire"],
+      default: "private",
+    },
+    availableFrom: { type: Date, default: Date.now },
+    amenities: [{ type: String }],
     images: [{ type: String }], // array of image URLs
 
     isActive: {

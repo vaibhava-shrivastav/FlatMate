@@ -11,7 +11,32 @@ exports.createListing = async (req, res) => {
 
 exports.getListings = async (req, res) => {
   try {
-    const listings = await Listing.find({ isActive: true }).populate("owner", "name role");
+    const { search, roomType, minBudget, maxBudget } = req.query;
+    const filter = { isActive: true };
+
+    if (roomType) {
+      filter.roomType = roomType;
+    }
+    if (minBudget || maxBudget) {
+      filter.rent = {};
+      if (minBudget) filter.rent.$gte = Number(minBudget);
+      if (maxBudget) filter.rent.$lte = Number(maxBudget);
+    }
+    if (search) {
+      const searchRegex = new RegExp(search.trim(), "i");
+      filter.$or = [
+        { title: searchRegex },
+        { description: searchRegex },
+        { "location.city": searchRegex },
+        { "location.area": searchRegex },
+        { "location.address": searchRegex },
+      ];
+    }
+
+    const listings = await Listing.find(filter)
+      .populate("owner", "name role isVerified")
+      .sort({ createdAt: -1 });
+
     res.status(200).json({ listings });
   } catch (err) {
     res.status(500).json({ message: "Could not fetch listings.", error: err.message });
