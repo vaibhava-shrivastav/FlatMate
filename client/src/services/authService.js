@@ -1,19 +1,26 @@
 import api from './api';
+import tokenManager from './tokenManager';
 
 const authService = {
   async login(email, password) {
     const { data } = await api.post('/auth/login', { email, password });
-    return data;
+    tokenManager.set(data.token);
+    const user = await this.getCurrentUser();
+    return { user, token: data.token };
   },
 
   async register(payload) {
     const { data } = await api.post('/auth/register', payload);
-    return data;
+    tokenManager.set(data.token);
+    const user = await this.getCurrentUser();
+    return { user, token: data.token, isNewUser: data.isNewUser ?? true };
   },
 
-  async googleLogin(accessToken) {
-    const { data } = await api.post('/auth/google', { access_token: accessToken });
-    return data;
+  async googleLogin(credential) {
+    const { data } = await api.post('/auth/google', { credential });
+    tokenManager.set(data.token);
+    const user = await this.getCurrentUser();
+    return { user, token: data.token, isNewUser: data.isNewUser ?? false };
   },
 
   async getCurrentUser() {
@@ -22,11 +29,7 @@ const authService = {
   },
 
   async logout() {
-    try {
-      await api.post('/auth/logout');
-    } catch {
-      // Server-side logout is best-effort; client always clears state
-    }
+    // No /auth/logout endpoint exists on the backend — client-side only
   },
 
   async refreshProfile() {

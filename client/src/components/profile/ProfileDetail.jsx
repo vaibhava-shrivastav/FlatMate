@@ -81,7 +81,7 @@ export default function ProfileDetail({ listingId }) {
   } = listing;
 
   const imageUrl = images?.[0] ?? null;
-  const ownerName = owner?.fullName ?? 'Unknown';
+  const ownerName = owner?.name ?? 'Unknown';
   const isVerified = owner?.isVerified ?? false;
 
   const score = compatibility?.score ?? null;

@@ -3,8 +3,8 @@ import { formatRelativeTime, truncate } from '@utils/formatters';
 
 export default function ConversationCard({ conversation, isActive, onClick }) {
   const { participant, lastMessage, unreadCount, updatedAt } = conversation;
-  const { fullName, avatar, isOnline, compatibility } = participant;
-  const initials = fullName?.[0]?.toUpperCase() ?? '?';
+  const { name, avatar, isOnline, compatibility } = participant;
+  const initials = name?.[0]?.toUpperCase() ?? '?';
   const hasUnread = unreadCount > 0;
 
   return (
@@ -25,7 +25,7 @@ export default function ConversationCard({ conversation, isActive, onClick }) {
       <div className="relative shrink-0">
         <div className="w-10 h-10 rounded-full bg-border flex items-center justify-center overflow-hidden">
           {avatar ? (
-            <img src={avatar} alt={fullName} className="w-full h-full object-cover" loading="lazy" />
+            <img src={avatar} alt={name} className="w-full h-full object-cover" loading="lazy" />
           ) : (
             <span className="text-sm font-semibold text-text-muted">{initials}</span>
           )}
@@ -39,7 +39,7 @@ export default function ConversationCard({ conversation, isActive, onClick }) {
       <div className="flex flex-col gap-0.5 flex-1 min-w-0">
         <div className="flex items-center justify-between gap-1">
           <span className={cn('text-sm truncate', hasUnread ? 'font-semibold text-text' : 'font-medium text-text')}>
-            {fullName}
+            {name}
           </span>
           <span className="text-[11px] text-text-muted shrink-0">
             {updatedAt ? formatRelativeTime(updatedAt) : ''}

@@ -16,8 +16,8 @@ function OnlineDot({ isOnline }) {
 export default function ChatHeader({ participant, onBack, showBack }) {
   if (!participant) return null;
 
-  const { fullName, avatar, isOnline, compatibility } = participant;
-  const initials = fullName?.[0]?.toUpperCase() ?? '?';
+  const { name, avatar, isOnline, compatibility } = participant;
+  const initials = name?.[0]?.toUpperCase() ?? '?';
 
   return (
     <div className="flex items-center gap-3 px-4 h-14 border-b border-border bg-background shrink-0">
@@ -35,7 +35,7 @@ export default function ChatHeader({ participant, onBack, showBack }) {
       <div className="relative shrink-0">
         <div className="w-8 h-8 rounded-full bg-border flex items-center justify-center overflow-hidden">
           {avatar ? (
-            <img src={avatar} alt={fullName} className="w-full h-full object-cover" />
+            <img src={avatar} alt={name} className="w-full h-full object-cover" />
           ) : (
             <span className="text-xs font-semibold text-text-muted">{initials}</span>
           )}
@@ -44,7 +44,7 @@ export default function ChatHeader({ participant, onBack, showBack }) {
       </div>
 
       <div className="flex flex-col min-w-0 flex-1">
-        <span className="text-sm font-semibold text-text truncate leading-tight">{fullName}</span>
+        <span className="text-sm font-semibold text-text truncate leading-tight">{name}</span>
         <span className="text-xs text-text-muted leading-tight">
           {isOnline ? 'Active now' : 'Offline'}
           {compatibility != null && (
