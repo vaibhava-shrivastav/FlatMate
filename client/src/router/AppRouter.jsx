@@ -10,6 +10,8 @@ import RegisterPage from '@pages/RegisterPage';
 import DashboardPage from '@pages/DashboardPage';
 import ChatPage from '@pages/ChatPage';
 import OnboardingPage from '@pages/OnboardingPage';
+import ProfilePage from '@pages/ProfilePage';
+import ListingDetailPage from '@pages/ListingDetailPage';
 import NotFoundPage from '@pages/NotFoundPage';
 
 export default function AppRouter() {
@@ -17,6 +19,7 @@ export default function AppRouter() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/listing/:id" element={<ListingDetailPage />} />
 
         {/* Guest-only routes — redirect to /dashboard if already authenticated */}
         <Route element={<GuestRoute />}>
@@ -30,6 +33,7 @@ export default function AppRouter() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/chat/:id" element={<ChatPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
         <Route path="/unauthorized" element={<Unauthorized />} />

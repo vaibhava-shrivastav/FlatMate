@@ -5,6 +5,7 @@ import Button from '@components/common/Button';
 const NAV_LINKS = [
   { label: 'Dashboard', to: '/dashboard', protected: true },
   { label: 'Chat', to: '/chat', protected: true },
+  { label: 'Profile', to: '/profile', protected: true },
 ];
 
 export default function Navbar() {
