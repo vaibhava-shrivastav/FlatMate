@@ -2,8 +2,8 @@ import { cn } from '@utils/cn';
 
 const variants = {
   primary: 'bg-primary text-white hover:bg-primary-hover',
-  secondary: 'bg-card text-white border border-border hover:border-primary',
-  ghost: 'bg-transparent text-text-muted hover:text-white hover:bg-card',
+  secondary: 'bg-card text-text border border-border hover:border-primary',
+  ghost: 'bg-transparent text-text-muted hover:text-text hover:bg-stone-100',
   danger: 'bg-danger text-white hover:opacity-90',
 };
 

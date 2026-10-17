@@ -30,7 +30,7 @@ export default function Dashboard() {
 
   const greeting = user?.fullName
     ? `Good to see you, ${user.fullName.split(' ')[0]}.`
-    : 'Find your next home.';
+    : 'Your listings';
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,7 +38,7 @@ export default function Dashboard() {
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-text tracking-tight">{greeting}</h1>
         <p className="text-sm text-text-muted">
-          Browse verified rooms and find your perfect roommate match.
+          Browse available rooms near you.
         </p>
       </div>
 

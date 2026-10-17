@@ -6,7 +6,7 @@ export default function ErrorBanner({ message, onDismiss }) {
   return (
     <div
       role="alert"
-      className="flex items-start gap-3 px-4 py-3 rounded-[var(--radius)] bg-danger/10 border border-danger/20"
+      className="flex items-start gap-3 px-4 py-3 rounded-[var(--radius)] bg-red-50 border-l-4 border-danger"
     >
       <AlertCircle className="w-4 h-4 text-danger mt-0.5 shrink-0" />
       <p className="text-sm text-danger flex-1">{message}</p>
