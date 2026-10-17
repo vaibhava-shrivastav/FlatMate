@@ -17,7 +17,16 @@ import { MOCK_LISTINGS } from '@data/mockListings';
 import ListingCard from '@components/dashboard/ListingCard';
 import Button from '@components/common/Button';
 
-const QUICK_LOCATIONS = ['Bangalore', 'Delhi NCR', 'Mathura (GLA)', 'Mumbai', 'Gurgaon'];
+const QUICK_LOCATIONS = [
+  'Knowledge Park II',
+  'Knowledge Park III',
+  'Pari Chowk',
+  'Alpha 1',
+  'Beta 1',
+  'Delta 2',
+  'Jagat Farm',
+  'Gaur City',
+];
 
 const FEATURES = [
   {
@@ -87,7 +96,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-card text-xs font-medium text-text-muted mb-6">
             <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-            <span>Verified student & professional flat sharing</span>
+            <span>Verified student & professional flat sharing in Greater Noida</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-semibold text-text tracking-tight max-w-3xl leading-tight">
@@ -97,8 +106,8 @@ export default function HomePage() {
           </h1>
 
           <p className="mt-4 text-base sm:text-lg text-text-muted max-w-2xl leading-relaxed">
-            FlatMate connects students and working professionals through daily habit compatibility,
-            transparent room specs, and direct in-app chat. Zero broker fees.
+            FlatMate connects students from GL Bajaj, Sharda, Galgotias, Bennett, and working professionals
+            through daily habit compatibility, transparent room specs, and direct in-app chat. Zero broker fees.
           </p>
 
           {/* Quick Search Form */}
@@ -110,7 +119,7 @@ export default function HomePage() {
               <Search className="w-4 h-4 text-text-muted shrink-0" />
               <input
                 type="text"
-                placeholder="Search by city, college, or area (e.g. Bangalore, GLA University, Koramangala)..."
+                placeholder="Search in Greater Noida (e.g. Knowledge Park, Pari Chowk, Alpha 1, Sharda)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full text-sm bg-transparent border-none outline-none text-text placeholder:text-text-muted"
@@ -147,7 +156,7 @@ export default function HomePage() {
               <p className="text-xs text-text-muted mt-0.5">Report habit satisfaction</p>
             </div>
             <div>
-              <p className="text-2xl font-semibold text-text">0 ₹</p>
+              <p className="text-2xl font-semibold text-text">₹0</p>
               <p className="text-xs text-text-muted mt-0.5">Brokerage commissions</p>
             </div>
             <div>
@@ -262,7 +271,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div>
                 <p className="text-xs text-text-muted font-medium">Sample Match Analysis</p>
-                <p className="text-base font-semibold text-text">Rohan & You</p>
+                <p className="text-base font-semibold text-text">Kartik & You</p>
               </div>
               <span className="inline-flex items-center text-sm font-semibold text-primary">
                 94% Match
@@ -313,7 +322,7 @@ export default function HomePage() {
 
             <div className="pt-2 border-t border-border flex items-center justify-between text-xs text-text-muted">
               <span>Verified student host</span>
-              <span className="text-primary font-medium">Koramangala, Bangalore</span>
+              <span className="text-primary font-medium">Knowledge Park II, Greater Noida</span>
             </div>
           </div>
         </div>
@@ -326,7 +335,7 @@ export default function HomePage() {
             Ready to find your room or post an open space?
           </h2>
           <p className="mt-3 text-sm text-text-muted max-w-xl mx-auto leading-relaxed">
-            Join students and young professionals across Bangalore, Delhi NCR, Mathura, Mumbai, and more.
+            Join students from GL Bajaj, Sharda, Galgotias, Bennett, and young professionals living across Greater Noida.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

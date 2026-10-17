@@ -6,98 +6,98 @@ const Listing = require("../models/Listing");
 
 const demoUsers = [
   {
-    name: "Rohan Sharma",
-    email: "rohan.sharma@example.com",
+    name: "Kartik Sharma",
+    email: "kartik.sharma@example.com",
     role: "HAS_ROOM",
-    budget: 15000,
+    budget: 8000,
+    onboardingComplete: true,
+    habitVector: {
+      sleepSchedule: 8,
+      cleanliness: 9,
+      smoking: 1,
+      cooking: 7,
+      guests: 4,
+      noise: 3,
+    },
+    location: {
+      type: "Point",
+      coordinates: [77.495, 28.46],
+    },
+  },
+  {
+    name: "Rhea Sen",
+    email: "rhea.sen@example.com",
+    role: "HAS_ROOM",
+    budget: 10000,
+    onboardingComplete: true,
+    habitVector: {
+      sleepSchedule: 7,
+      cleanliness: 10,
+      smoking: 1,
+      cooking: 8,
+      guests: 3,
+      noise: 2,
+    },
+    location: {
+      type: "Point",
+      coordinates: [77.488, 28.472],
+    },
+  },
+  {
+    name: "Arjun Verma",
+    email: "arjun.verma@example.com",
+    role: "HAS_ROOM",
+    budget: 12000,
+    onboardingComplete: true,
+    habitVector: {
+      sleepSchedule: 7,
+      cleanliness: 8,
+      smoking: 1,
+      cooking: 6,
+      guests: 5,
+      noise: 3,
+    },
+    location: {
+      type: "Point",
+      coordinates: [77.513, 28.471],
+    },
+  },
+  {
+    name: "Aman Srivastava",
+    email: "aman.srivastava@example.com",
+    role: "HAS_ROOM",
+    budget: 6000,
+    onboardingComplete: true,
+    habitVector: {
+      sleepSchedule: 6,
+      cleanliness: 8,
+      smoking: 2,
+      cooking: 5,
+      guests: 5,
+      noise: 4,
+    },
+    location: {
+      type: "Point",
+      coordinates: [77.506, 28.477],
+    },
+  },
+  {
+    name: "Neha Gupta",
+    email: "neha.gupta@example.com",
+    role: "HAS_ROOM",
+    budget: 13000,
     onboardingComplete: true,
     habitVector: {
       sleepSchedule: 8,
       cleanliness: 9,
       smoking: 1,
       cooking: 8,
-      guests: 5,
-      noise: 3,
-    },
-    location: {
-      type: "Point",
-      coordinates: [77.6271, 12.9352],
-    },
-  },
-  {
-    name: "Ananya Verma",
-    email: "ananya.verma@example.com",
-    role: "HAS_ROOM",
-    budget: 20000,
-    onboardingComplete: true,
-    habitVector: {
-      sleepSchedule: 7,
-      cleanliness: 10,
-      smoking: 1,
-      cooking: 7,
       guests: 4,
       noise: 2,
     },
     location: {
       type: "Point",
-      coordinates: [77.6412, 12.9784],
-    },
-  },
-  {
-    name: "Kabir Mehta",
-    email: "kabir.mehta@example.com",
-    role: "HAS_ROOM",
-    budget: 10000,
-    onboardingComplete: true,
-    habitVector: {
-      sleepSchedule: 6,
-      cleanliness: 8,
-      smoking: 2,
-      cooking: 6,
-      guests: 6,
-      noise: 4,
-    },
-    location: {
-      type: "Point",
-      coordinates: [77.0878, 28.495],
-    },
-  },
-  {
-    name: "Priya Nair",
-    email: "priya.nair@example.com",
-    role: "HAS_ROOM",
-    budget: 18000,
-    onboardingComplete: true,
-    habitVector: {
-      sleepSchedule: 8,
-      cleanliness: 9,
-      smoking: 1,
-      cooking: 9,
-      guests: 5,
-      noise: 3,
-    },
-    location: {
-      type: "Point",
-      coordinates: [72.9051, 19.1176],
-    },
-  },
-  {
-    name: "Aman Gupta",
-    email: "aman.gupta@example.com",
-    role: "HAS_ROOM",
-    budget: 7000,
-    onboardingComplete: true,
-    habitVector: {
-      sleepSchedule: 7,
-      cleanliness: 8,
-      smoking: 1,
-      cooking: 5,
-      guests: 4,
-      noise: 3,
-    },
-    location: {
-      type: "Point",
-      coordinates: [77.595, 27.6057],
+      coordinates: [77.428, 28.605],
     },
   },
 ];
@@ -105,19 +105,19 @@ const demoUsers = [
 const demoListingsData = [
   {
     userIndex: 0,
-    title: "Sunlit Private Room in 3BHK Flat",
-    rent: 14500,
+    title: "Furnished Room near GL Bajaj & Galgotias (KP II)",
+    rent: 7500,
     location: {
       type: "Point",
-      coordinates: [77.6271, 12.9352],
-      city: "Bangalore",
-      area: "Koramangala 4th Block",
-      address: "14th Main Rd, Koramangala, Bengaluru, Karnataka",
+      coordinates: [77.495, 28.46],
+      city: "Greater Noida",
+      area: "Knowledge Park II",
+      address: "Near GL Bajaj Institute, Knowledge Park II, Greater Noida, UP",
     },
-    description: "Spacious private bedroom with attached washroom in a fully-equipped 3BHK. High-speed 300 Mbps WiFi, modular kitchen, daily maid service, and 24/7 power backup. Looking for a neat working professional.",
+    description: "Quiet, well-ventilated student room walking distance to Knowledge Park II colleges. High-speed 200 Mbps WiFi, RO drinking water, 24/7 power backup, study desk, and optional daily mess tiffin service.",
     roomType: "private",
     availableFrom: new Date(Date.now() + 86400000 * 2),
-    amenities: ["Attached Bath", "High-speed WiFi", "Power Backup", "Washing Machine", "Kitchen Access", "Cook Available"],
+    amenities: ["High-speed WiFi", "Study Table", "RO Purifier", "Power Backup", "Mess Available"],
     images: [
       "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
@@ -125,19 +125,19 @@ const demoListingsData = [
   },
   {
     userIndex: 1,
-    title: "Modern Studio Apartment with Balcony",
-    rent: 22000,
+    title: "Single AC Room near Sharda University (KP III)",
+    rent: 8500,
     location: {
       type: "Point",
-      coordinates: [77.6412, 12.9784],
-      city: "Bangalore",
-      area: "Indiranagar",
-      address: "100ft Road, Defence Colony, Indiranagar, Bengaluru",
+      coordinates: [77.488, 28.472],
+      city: "Greater Noida",
+      area: "Knowledge Park III",
+      address: "Plot 32, Near Sharda University Gate, Knowledge Park III, Greater Noida",
     },
-    description: "Cozy independent studio apartment with private balcony garden. Walking distance to 100ft road cafes and metro station. Ideal for remote workers or designers who enjoy quiet, airy spaces.",
-    roomType: "studio",
+    description: "Private room with attached washroom just 400m from Sharda University campus. Includes air conditioner, geyser, study workstation, daily room cleaning, and gated security.",
+    roomType: "private",
     availableFrom: new Date(),
-    amenities: ["Private Balcony", "Air Conditioning", "Dedicated Desk", "Full Kitchen", "Lift", "Security"],
+    amenities: ["Air Conditioning", "Attached Bath", "Geyser", "Housekeeping", "Security"],
     images: [
       "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80",
@@ -145,114 +145,114 @@ const demoListingsData = [
   },
   {
     userIndex: 2,
-    title: "Shared Master Bedroom near Cyber Hub",
-    rent: 9000,
+    title: "Private Bedroom in 2BHK near Alpha 1 Metro",
+    rent: 11000,
     location: {
       type: "Point",
-      coordinates: [77.0878, 28.495],
-      city: "Gurgaon",
-      area: "DLF Phase 2",
-      address: "Near Sikanderpur Metro, DLF Phase 2, Gurugram, Haryana",
+      coordinates: [77.513, 28.471],
+      city: "Greater Noida",
+      area: "Sector Alpha 1",
+      address: "Sector Alpha 1, Near Alpha 1 Metro Station, Greater Noida",
     },
-    description: "Twin sharing spot available in a large master bedroom. 5 minutes from Cyber City. Fully air-conditioned, separate wardrobes, study tables, and refrigerator provided.",
-    roomType: "shared",
-    availableFrom: new Date(),
-    amenities: ["AC", "WiFi", "Geyser", "Housekeeping", "Gated Security", "Parking"],
-    images: [
-      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80",
-    ],
-  },
-  {
-    userIndex: 3,
-    title: "Furnished Shared Room with Lake View",
-    rent: 12500,
-    location: {
-      type: "Point",
-      coordinates: [72.9051, 19.1176],
-      city: "Mumbai",
-      area: "Powai",
-      address: "Hiranandani Gardens, Powai, Mumbai, Maharashtra",
-    },
-    description: "Looking for a roommate to share a serene, well-ventilated bedroom in Hiranandani. Access to building clubhouse, swimming pool, and gym. Non-smoker preferred.",
-    roomType: "shared",
-    availableFrom: new Date(Date.now() + 86400000 * 5),
-    amenities: ["Swimming Pool", "Gym", "Lake View", "AC", "Modular Kitchen", "Gas Pipeline"],
-    images: [
-      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
-    ],
-  },
-  {
-    userIndex: 4,
-    title: "Cozy Student Flat near GLA University",
-    rent: 6500,
-    location: {
-      type: "Point",
-      coordinates: [77.595, 27.6057],
-      city: "Mathura",
-      area: "GLA University Road",
-      address: "NH-19, Near GLA University Campus, Chaumuhan, Mathura",
-    },
-    description: "Well-maintained student room located 400m from GLA campus gate. Peaceful study environment, RO drinking water, high-speed fiber internet, and home-style tiffin delivery option.",
+    description: "Bright private room with personal balcony in a peaceful Alpha 1 society. 3 minutes walk to Aqua Line Metro. Fully functional kitchen, refrigerator, and washing machine provided.",
     roomType: "private",
-    availableFrom: new Date(),
-    amenities: ["WiFi", "RO Purifier", "Study Table", "Power Backup", "Bicycle Parking"],
-    images: [
-      "https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80",
-    ],
-  },
-  {
-    userIndex: 0,
-    title: "Private Room with Dedicated Workstation",
-    rent: 16000,
-    location: {
-      type: "Point",
-      coordinates: [77.6389, 12.9121],
-      city: "Bangalore",
-      area: "HSR Layout Sector 4",
-      address: "Sector 4, HSR Layout, Bengaluru, Karnataka",
-    },
-    description: "Bright private room with ergonomic chair, standing desk setup, dual monitor mount, and private washroom. Ideal for software engineers or remote founders. Friendly, respectful flatmates.",
-    roomType: "private",
-    availableFrom: new Date(Date.now() + 86400000 * 7),
-    amenities: ["Ergonomic Desk", "Attached Bath", "300 Mbps WiFi", "Cook Included", "Washing Machine"],
+    availableFrom: new Date(Date.now() + 86400000 * 4),
+    amenities: ["Metro Walking Distance", "Balcony", "Kitchen Access", "Washing Machine", "WiFi"],
     images: [
       "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=800&q=80",
     ],
   },
   {
-    userIndex: 1,
-    title: "Spacious 2BHK Entire Flatshare",
-    rent: 18500,
+    userIndex: 3,
+    title: "Shared Room near Pari Chowk (Beta 1)",
+    rent: 5500,
     location: {
       type: "Point",
-      coordinates: [77.2066, 28.5494],
-      city: "New Delhi",
-      area: "Hauz Khas Enclave",
-      address: "Hauz Khas, New Delhi, Delhi",
+      coordinates: [77.506, 28.477],
+      city: "Greater Noida",
+      area: "Sector Beta 1",
+      address: "Near Beta 1 Main Market & Pari Chowk, Greater Noida",
     },
-    description: "Private room in an upscale heritage Hauz Khas home. Walking distance to Hauz Khas deer park and metro station. Beautiful terrace access with sunset views.",
-    roomType: "entire",
+    description: "Affordable twin-sharing spot in a spacious 3BHK flat. 5 minutes from Pari Chowk. Fully air-conditioned, separate wardrobes, study tables, and high-speed fiber internet.",
+    roomType: "shared",
     availableFrom: new Date(),
-    amenities: ["Terrace Access", "Heritage Building", "Park Adjacent", "WiFi", "AC", "Full Furnishing"],
+    amenities: ["AC", "WiFi", "Wardrobe", "Pari Chowk Nearby", "Inverter Backup"],
+    images: [
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80",
+    ],
+  },
+  {
+    userIndex: 0,
+    title: "Independent Studio Apartment in Delta 2",
+    rent: 14000,
+    location: {
+      type: "Point",
+      coordinates: [77.525, 28.486],
+      city: "Greater Noida",
+      area: "Sector Delta 2",
+      address: "Sector Delta 2, Near Delta 1 Metro, Greater Noida",
+    },
+    description: "Self-contained studio flat with private kitchen, balcony, and reserved parking. Quiet green sector with parks. Ideal for software professionals or research scholars.",
+    roomType: "studio",
+    availableFrom: new Date(Date.now() + 86400000 * 5),
+    amenities: ["Private Kitchen", "Balcony", "Covered Parking", "AC", "Power Backup"],
     images: [
       "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80",
     ],
   },
   {
-    userIndex: 3,
-    title: "Peaceful Master Suite in Penthouse",
-    rent: 28000,
+    userIndex: 1,
+    title: "Master Bedroom Suite in NRI City High-Rise",
+    rent: 15500,
     location: {
       type: "Point",
-      coordinates: [72.8295, 19.0596],
-      city: "Mumbai",
-      area: "Bandra West",
-      address: "Pali Hill, Bandra West, Mumbai, Maharashtra",
+      coordinates: [77.518, 28.455],
+      city: "Greater Noida",
+      area: "NRI City, Omega 1",
+      address: "NRI City Township, Sector Omega 1, Greater Noida",
     },
-    description: "Master bedroom suite with walk-in closet in a luxury Bandra apartment. Panoramic city skyline views, daily housekeeping, and premium appliances throughout.",
+    description: "Luxury master suite with attached washroom in gated NRI City society. Includes clubhouse access, swimming pool, gym, 24/7 multi-tier security, and park views. Non-smoker preferred.",
     roomType: "private",
     availableFrom: new Date(Date.now() + 86400000 * 3),
-    amenities: ["Walk-in Closet", "Panoramic View", "Covered Parking", "AC", "Clubhouse", "24/7 Concierge"],
+    amenities: ["Swimming Pool", "Gym Access", "Park View", "Clubhouse", "24/7 Security"],
+    images: [
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
+    ],
+  },
+  {
+    userIndex: 2,
+    title: "Cozy Private Room near Jagat Farm (Gamma 2)",
+    rent: 9000,
+    location: {
+      type: "Point",
+      coordinates: [77.502, 28.482],
+      city: "Greater Noida",
+      area: "Sector Gamma 2",
+      address: "Behind Jagat Farm Commercial Market, Sector Gamma 2, Greater Noida",
+    },
+    description: "Well-ventilated private room right behind Jagat Farm market. Quick access to daily groceries, food street, and shared autos. Fully furnished with double bed, mattress, and wardrobe.",
+    roomType: "private",
+    availableFrom: new Date(),
+    amenities: ["Market Walking Distance", "Furnished", "WiFi", "Geyser", "Auto Stand Nearby"],
+    images: [
+      "https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80",
+    ],
+  },
+  {
+    userIndex: 4,
+    title: "Modern High-Rise Flatshare (Gaur City, G. Noida West)",
+    rent: 12000,
+    location: {
+      type: "Point",
+      coordinates: [77.428, 28.605],
+      city: "Greater Noida",
+      area: "Gaur City 1, Greater Noida West",
+      address: "Gaur City 1, Sector 4, Greater Noida West, UP",
+    },
+    description: "Private bedroom in a 3BHK high-rise apartment in Gaur City. Direct connectivity to Sector 52 Noida Metro and Cyber City. High-speed WiFi, gym, swimming pool, and cook facility available.",
+    roomType: "entire",
+    availableFrom: new Date(Date.now() + 86400000 * 7),
+    amenities: ["Gated Society", "Gym & Pool", "Cook Service", "Power Backup", "AC"],
     images: [
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
     ],
@@ -268,7 +268,7 @@ async function seed({ manageConnection = true } = {}) {
   try {
     if (manageConnection) {
       await mongoose.connect(mongoUri);
-      console.log("Connected to MongoDB for seeding...");
+      console.log("Connected to MongoDB for seeding Greater Noida dataset...");
     }
 
     const passwordHash = await bcrypt.hash("demo12345", 10);
@@ -283,20 +283,19 @@ async function seed({ manageConnection = true } = {}) {
           password: passwordHash,
           isVerified: true,
         });
+      } else {
+        await User.updateOne({ email: u.email }, { ...u, isVerified: true });
       }
       createdUsers.push(user);
     }
 
-    console.log(`Ensured ${createdUsers.length} demo users exist.`);
+    console.log(`Ensured ${createdUsers.length} Greater Noida demo hosts exist.`);
 
-    // Check existing listings
-    const existingCount = await Listing.countDocuments();
-    if (existingCount > 0) {
-      console.log(`Found ${existingCount} existing listings. Clearing old demo listings...`);
-      await Listing.deleteMany({ owner: { $in: createdUsers.map((u) => u._id) } });
-    }
+    // Clear previous listings so only Greater Noida listings are present
+    await Listing.deleteMany({});
+    console.log("Cleared old listings.");
 
-    // Insert demo listings
+    // Insert Greater Noida demo listings
     const listingsToInsert = demoListingsData.map((item) => {
       const owner = createdUsers[item.userIndex];
       return {
@@ -314,7 +313,7 @@ async function seed({ manageConnection = true } = {}) {
     });
 
     await Listing.insertMany(listingsToInsert);
-    console.log(`Successfully seeded ${listingsToInsert.length} demo listings!`);
+    console.log(`Successfully seeded ${listingsToInsert.length} Greater Noida listings!`);
   } catch (err) {
     console.error("Seeding failed:", err);
     throw err;
