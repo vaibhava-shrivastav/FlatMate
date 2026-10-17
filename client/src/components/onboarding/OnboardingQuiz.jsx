@@ -117,7 +117,13 @@ export default function OnboardingQuiz() {
     setIsSubmitting(true);
     setError('');
     try {
-      const { data } = await api.post('/users/onboarding', {habitVector: answers,});
+      const numericVector = Object.fromEntries(
+        Object.entries(answers).map(([key, val]) => [
+          key,
+          typeof val === 'number' ? val : (OPTION_SCORES[val] ?? 3),
+        ])
+      );
+      const { data } = await api.post('/users/onboarding', { habitVector: numericVector });
       updateUser(data.user ?? {});
       navigate('/dashboard', { replace: true });
     } catch (err) {
