@@ -20,19 +20,19 @@ L.Icon.Default.mergeOptions({
 const INDIA_CENTER = [20.5937, 78.9629];
 const DEFAULT_ZOOM = 5;
 
-function BoundsController({ listings }) {
+function BoundsController({ positions }) {
   const map = useMap();
 
   useEffect(() => {
-    if (listings.length === 0) return;
-    const bounds = L.latLngBounds(listings.map((l) => [l.location.lat, l.location.lng]));
+    if (positions.length === 0) return;
+    const bounds = L.latLngBounds(positions);
     map.fitBounds(bounds, { padding: [48, 48], maxZoom: 14 });
-  }, [listings, map]);
+  }, [positions, map]);
 
   return null;
 }
 
-function MapInner({ listings, selectedId, onSelect, bounds }) {
+function MapInner({ listings, positions, selectedId, onSelect, bounds }) {
   return (
     <>
       <TileLayer
@@ -40,12 +40,12 @@ function MapInner({ listings, selectedId, onSelect, bounds }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {listings.length > 0 && <BoundsController listings={listings} />}
+      {listings.length > 0 && <BoundsController positions={positions} />}
 
-      {listings.map((listing) => (
+      {listings.map((listing, index) => (
         <Marker
           key={listing._id}
-          position={[listing.location.lat, listing.location.lng]}
+          position={positions[index]}
           icon={getMarkerIcon(listing, listing._id === selectedId)}
           eventHandlers={{
             click: () => onSelect(listing._id === selectedId ? null : listing._id),
@@ -72,19 +72,37 @@ function MapInner({ listings, selectedId, onSelect, bounds }) {
 export default function MapView({ listings = [], isLoading = false, hasFilters = false, onReset }) {
   const [selectedId, setSelectedId] = useState(null);
 
+  // GeoJSON stores coordinates as [longitude, latitude]; Leaflet needs [latitude, longitude].
+  const getLatLng = (listing) => {
+    const coords = listing.location?.coordinates;
+    if (!Array.isArray(coords) || coords.length < 2) return null;
+    const [lng, lat] = coords;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return [lat, lng];
+  };
+
   const validListings = useMemo(
-    () => listings.filter((l) => l.location?.lat != null && l.location?.lng != null),
+    () => listings.filter((l) => getLatLng(l) !== null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [listings]
   );
 
   const bounds = useMemo(() => {
     if (validListings.length === 0) return null;
-    return L.latLngBounds(validListings.map((l) => [l.location.lat, l.location.lng]));
+    return L.latLngBounds(validListings.map((l) => getLatLng(l)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [validListings]);
 
   const defaultCenter = validListings.length > 0
-    ? [validListings[0].location.lat, validListings[0].location.lng]
+    ? getLatLng(validListings[0])
     : INDIA_CENTER;
+
+  const positions = useMemo(
+    () => validListings.map((l) => getLatLng(l)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [validListings]
+  );
 
   if (isLoading) return <MapSkeleton />;
 
@@ -106,6 +124,7 @@ export default function MapView({ listings = [], isLoading = false, hasFilters =
       >
         <MapInner
           listings={validListings}
+          positions={positions}
           selectedId={selectedId}
           onSelect={setSelectedId}
           bounds={bounds}

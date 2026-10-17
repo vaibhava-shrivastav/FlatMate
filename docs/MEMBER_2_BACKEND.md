@@ -1,5 +1,136 @@
 # MEMBER 2 — Core Backend & Route Controller Lead
 
+## Fix Order
+
+| # | Fix Title | Severity | File | Depends on |
+|---|-----------|----------|------|------------|
+| 1 | Logout endpoint missing | Critical | `server/routes/authRoutes.js`, `server/controllers/authController.js` | — |
+| 2 | Google access token audience not verified | Medium | `server/controllers/authController.js` | — |
+| 3 | Google account linking conflict | Medium | `server/controllers/authController.js` | — |
+
+---
+
+## Fix 1: Logout endpoint missing (AUDIT ref: Critical)
+
+- **File:** `server/controllers/authController.js` (add at end) + `server/routes/authRoutes.js:1-8`
+- **Why:** The client calls `POST /api/auth/logout` but no such route exists, returning 404. While JWT is stateless, the server should acknowledge the request so the client can complete its logout flow cleanly.
+- **Change:**
+
+In `server/controllers/authController.js`, add at the end of the file:
+
+```javascript
+// AFTER the existing googleAuth export, add:
+exports.logout = async (req, res) => {
+  // JWT is stateless — nothing to invalidate server-side.
+  // This endpoint exists so the client gets a 200 instead of a 404.
+  res.status(200).json({ message: "Logged out successfully." });
+};
+```
+
+In `server/routes/authRoutes.js`:
+
+```diff
+  const router = require("express").Router();
+- const { register, login, googleAuth } = require("../controllers/authController");
++ const { register, login, googleAuth, logout } = require("../controllers/authController");
+
+  router.post("/register", register);
+  router.post("/login", login);
+  router.post("/google", googleAuth);
++ router.post("/logout", logout);
+
+  module.exports = router;
+```
+
+- **Verify:** `curl -X POST http://localhost:5000/api/auth/logout` → should return `{"message":"Logged out successfully."}` with status 200.
+- **Commit:** `git add server/controllers/authController.js server/routes/authRoutes.js && git commit -m "fix(auth): add POST /auth/logout endpoint"`
+
+---
+
+## Fix 2: Google access token audience not verified (AUDIT ref: Medium)
+
+- **File:** `server/controllers/authController.js:46-80`
+- **Why:** The `googleAuth` function fetches user info from Google's userinfo endpoint using the access token but never verifies the token's audience (`aud`) matches our `GOOGLE_CLIENT_ID`. A token minted for a different app could be used to authenticate.
+- **Change:**
+
+```javascript
+// BEFORE (after the userinfo fetch, around line 80-82)
+console.log("[GoogleAuth] Got user info for:", payload.email);
+
+let user = await User.findOne({ googleId: payload.sub });
+
+// AFTER — add token info verification between the userinfo fetch and the user lookup
+console.log("[GoogleAuth] Got user info for:", payload.email);
+
+// Verify the access token was issued for our client
+const tokenInfo = await new Promise((resolve, reject) => {
+  const tiOptions = {
+    hostname: 'oauth2.googleapis.com',
+    path: `/tokeninfo?access_token=${access_token}`,
+    method: 'GET',
+  };
+  const tiReq = https.request(tiOptions, (tiRes) => {
+    let tiData = '';
+    tiRes.on('data', (chunk) => tiData += chunk);
+    tiRes.on('end', () => {
+      if (tiRes.statusCode >= 200 && tiRes.statusCode < 300) {
+        resolve(JSON.parse(tiData));
+      } else {
+        reject(new Error(`Token info error: ${tiRes.statusCode} ${tiData}`));
+      }
+    });
+  });
+  tiReq.on('error', reject);
+  tiReq.end();
+});
+
+if (tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
+  return res.status(401).json({ message: "Token audience mismatch." });
+}
+
+let user = await User.findOne({ googleId: payload.sub });
+```
+
+- **Verify:** Send a Google access token issued for a different client ID → should get 401 "Token audience mismatch."
+- **Commit:** `git add server/controllers/authController.js && git commit -m "fix(auth): verify Google access token audience before accepting"`
+
+---
+
+## Fix 3: Google account linking conflict (AUDIT ref: Medium)
+
+- **File:** `server/controllers/authController.js:88-92`
+- **Why:** When a Google login finds an existing user by email, it blindly overwrites `googleId`. If that email account is already linked to a *different* Google account, this silently breaks the original link.
+- **Change:**
+
+```javascript
+// BEFORE (lines 87-92)
+if (!user) {
+  user = await User.findOne({ email: payload.email });
+  if (user) {
+    // Link Google account to existing email user
+    user.googleId = payload.sub;
+    await user.save();
+
+// AFTER
+if (!user) {
+  user = await User.findOne({ email: payload.email });
+  if (user) {
+    // Check for conflicting Google link
+    if (user.googleId && user.googleId !== payload.sub) {
+      return res.status(409).json({
+        message: "This email is already linked to a different Google account.",
+      });
+    }
+    // Link Google account to existing email user
+    user.googleId = payload.sub;
+    await user.save();
+```
+
+- **Verify:** Create a local account, link it to Google account A, then try signing in with Google account B (same email) → should return 409.
+- **Commit:** `git add server/controllers/authController.js && git commit -m "fix(auth): prevent overwriting existing Google account link on email collision"`
+
+---
+
 ## 1. Setup Guide
 
 ```bash
@@ -292,4 +423,3 @@ router.get("/:chatId", auth, getChatHistory);
 
 module.exports = router;
 ```
-

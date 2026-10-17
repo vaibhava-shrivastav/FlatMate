@@ -5,6 +5,7 @@ import { isValidEmail, isValidPassword, isRequired } from '@utils/validators';
 import { cn } from '@utils/cn';
 import { resolveApiError } from '@utils/authHelpers';
 import authService from '@services/authService';
+import tokenManager from '@services/tokenManager';
 import Input from '@components/common/Input';
 import Button from '@components/common/Button';
 import GoogleAuthButton from './GoogleAuthButton';
@@ -22,12 +23,12 @@ const INITIAL_VALUES = {
 
 const ROLES = [
   {
-    value: 'searching',
+    value: 'SEARCHING_ROOM',
     label: 'Looking for a room',
     description: 'I need to find a place to stay.',
   },
   {
-    value: 'hosting',
+    value: 'HAS_ROOM',
     label: 'I have a room',
     description: 'I have a space available to rent.',
   },
@@ -136,12 +137,15 @@ export default function Register() {
     setIsSubmitting(true);
     try {
       const data = await authService.register({
-        fullName: values.fullName.trim(),
+        name: values.fullName.trim(),
         email: values.email,
         password: values.password,
         role: values.role,
       });
-      register(data.user, data.token);
+      // Server returns { token, isNewUser } — no user object
+      tokenManager.set(data.token);
+      const user = await authService.getCurrentUser();
+      register(user, data.token);
       navigate('/onboarding', { replace: true });
     } catch (error) {
       setServerError(resolveApiError(error));

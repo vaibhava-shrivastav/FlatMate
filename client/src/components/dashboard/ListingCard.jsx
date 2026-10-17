@@ -39,7 +39,7 @@ export default function ListingCard({ listing }) {
   } = listing;
 
   const imageUrl = images?.[0] ?? null;
-  const ownerName = owner?.fullName ?? 'Unknown';
+  const ownerName = owner?.name ?? 'Unknown';
   const isVerified = owner?.isVerified ?? false;
 
   const handleFavorite = (e) => {

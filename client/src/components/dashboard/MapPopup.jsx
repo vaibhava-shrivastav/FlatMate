@@ -8,7 +8,7 @@ export default function MapPopup({ listing }) {
   const navigate = useNavigate();
   const { _id, title, rent, compatibility, images, location, owner } = listing;
   const imageUrl = images?.[0] ?? null;
-  const ownerName = owner?.fullName ?? null;
+  const ownerName = owner?.name ?? null;
   const isVerified = owner?.isVerified ?? false;
 
   return (

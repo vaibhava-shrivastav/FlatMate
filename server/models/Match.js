@@ -39,5 +39,6 @@ const matchSchema = new mongoose.Schema(
 // Ensures only ONE match document can exist per (userA, userB) pair
 // (prevents duplicate entries for the same 2 people)
 matchSchema.index({ userA: 1, userB: 1 }, { unique: true });
+matchSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 7 }); // 7-day TTL
 
 module.exports = mongoose.model("Match", matchSchema);

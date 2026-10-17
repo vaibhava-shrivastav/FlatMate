@@ -41,6 +41,8 @@ exports.login = async (req, res) => {
   }
 };
 
+const https = require('https');
+
 exports.googleAuth = async (req, res) => {
   try {
     const { credential } = req.body;
@@ -134,6 +136,7 @@ exports.googleAuth = async (req, res) => {
 
     res.status(200).json({ token: signToken(user._id), isNewUser });
   } catch (err) {
+    console.error("[GoogleAuth] Error:", err.message, err.stack);
     res.status(401).json({ message: "Google authentication failed.", error: err.message });
   }
 };

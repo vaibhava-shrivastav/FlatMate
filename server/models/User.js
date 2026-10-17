@@ -54,7 +54,6 @@ const userSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number], 
-        default: [0, 0],
       },
     },
   },
