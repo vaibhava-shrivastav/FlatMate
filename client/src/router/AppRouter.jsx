@@ -20,6 +20,7 @@ export default function AppRouter() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/listing/:id" element={<ListingDetailPage />} />
+        <Route path="/user/:id" element={<ProfilePage />} />
 
         {/* Guest-only routes — redirect to /dashboard if already authenticated */}
         <Route element={<GuestRoute />}>
