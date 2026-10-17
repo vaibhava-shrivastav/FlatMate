@@ -1,49 +1,33 @@
 const mongoose = require("mongoose");
 
-// Blueprint for a "Listing" document in MongoDB
-// (a room/flat that someone with role "HAS_ROOM" is offering)
-const listingSchema = new mongoose.Schema(
+// Blueprint for a "Message" document in MongoDB
+// (a single chat message between two matched users)
+const messageSchema = new mongoose.Schema(
   {
-    owner: {
-      type: mongoose.Schema.Types.ObjectId, // links to a User document
-      ref: "User", // tells mongoose this ID points to the "User" model
-      required: true, // every listing must belong to someone
-    },
-    title: {
+    chatId: {
       type: String,
-      required: true, // e.g. "2BHK near GLA University"
+      required: true,
+      index: true, // speeds up "get all messages for this chat" queries
     },
-    rent: {
-      type: Number,
-      required: true, // monthly rent amount
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // links to who sent this message
+      required: true,
     },
-
-    // ---- Location (same GeoJSON format as User.js) ----
-    location: {
-      type: {
-        type: String,
-        enum: ["Point"],
-        default: "Point",
+    participants: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User", // both users involved in this chat
       },
-      coordinates: {
-        type: [Number], // [longitude, latitude]
-        required: true, // listings must have a location (unlike User, no default)
-      },
-    },
-
-    images: [{ type: String }], // array of image URLs
-
-    isActive: {
-      type: Boolean,
-      default: true, // false = listing hidden/closed, without deleting it
+    ],
+    text: {
+      type: String,
+      required: true, // the actual message content
     },
   },
   {
-    timestamps: true, // auto-adds createdAt and updatedAt
+    timestamps: true, // auto-adds createdAt (useful for message order) and updatedAt
   }
 );
 
-// Speeds up "find nearby listings" queries
-listingSchema.index({ location: "2dsphere" });
-
-module.exports = mongoose.model("Listing", listingSchema);
+module.exports = mongoose.model("Message", messageSchema);

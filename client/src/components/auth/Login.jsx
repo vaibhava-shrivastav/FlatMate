@@ -4,6 +4,7 @@ import { useAuthForm } from '@hooks/useAuthForm';
 import { isValidEmail, isValidPassword, isRequired } from '@utils/validators';
 import { resolveApiError } from '@utils/authHelpers';
 import authService from '@services/authService';
+import tokenManager from '@services/tokenManager';
 import Input from '@components/common/Input';
 import Button from '@components/common/Button';
 import GoogleAuthButton from './GoogleAuthButton';
@@ -55,8 +56,11 @@ export default function Login() {
 
     setIsSubmitting(true);
     try {
-      const { user, token } = await authService.login(values.email, values.password);
-      login(user, token);
+      const data = await authService.login(values.email, values.password);
+      // Server returns { token } — no user object
+      tokenManager.set(data.token);
+      const user = await authService.getCurrentUser();
+      login(user, data.token);
       navigate(redirectTo, { replace: true });
     } catch (error) {
       setServerError(resolveApiError(error));

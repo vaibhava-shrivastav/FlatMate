@@ -5,6 +5,7 @@ import { isValidEmail, isValidPassword, isRequired } from '@utils/validators';
 import { cn } from '@utils/cn';
 import { resolveApiError } from '@utils/authHelpers';
 import authService from '@services/authService';
+import tokenManager from '@services/tokenManager';
 import Input from '@components/common/Input';
 import Button from '@components/common/Button';
 import GoogleAuthButton from './GoogleAuthButton';
@@ -135,13 +136,16 @@ export default function Register() {
 
     setIsSubmitting(true);
     try {
-      const { user, token } = await authService.register({
+      const data = await authService.register({
         name: values.fullName.trim(),
         email: values.email,
         password: values.password,
         role: values.role,
       });
-      register(user, token);
+      // Server returns { token, isNewUser } — no user object
+      tokenManager.set(data.token);
+      const user = await authService.getCurrentUser();
+      register(user, data.token);
       navigate('/onboarding', { replace: true });
     } catch (error) {
       setServerError(resolveApiError(error));

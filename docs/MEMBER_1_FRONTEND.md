@@ -1,5 +1,293 @@
 # MEMBER 1 — Frontend Lead (`client/`)
 
+## Fix Order
+
+| # | Fix Title | Severity | File | Depends on |
+|---|-----------|----------|------|------------|
+| 1 | authService returns token instead of user | Critical | `client/src/services/authService.js` | — |
+| 2 | useConversations calls non-existent endpoint | Critical | `client/src/hooks/useConversations.js` | — |
+| 3 | useMessages REST endpoints non-existent | Critical | `client/src/hooks/useMessages.js` | — |
+| 4 | Socket event name mismatches | Critical | `client/src/hooks/useMessages.js` | — |
+| 5 | Socket error handling in AuthContext | Low | `client/src/context/AuthContext.jsx` | — |
+| 6 | refreshUser silently swallows errors | Low | `client/src/context/AuthContext.jsx` | — |
+| 7 | 401 interceptor auth URL list incomplete | Low | `client/src/services/api.js` | Member 2: logout route |
+| 8 | Typing indicators not wired end-to-end | Low | `client/src/hooks/useMessages.js` | Member 4: server typing events |
+| 9 | Page title is "client" instead of "FlatMate" | Medium | `client/index.html` | — |
+
+---
+
+## Fix 1: authService returns token instead of user (AUDIT ref: Critical)
+
+- **File:** `client/src/services/authService.js:4-17`
+- **Why:** `login()` and `register()` return `{ token, isNewUser }` — the raw API response — which AuthContext stores as the `user` object, leaving `user.name`, `user.role`, etc. undefined everywhere.
+- **Change:**
+
+```diff
+  async login(email, password) {
+    const { data } = await api.post('/auth/login', { email, password });
+-   return data;
++   localStorage.setItem('token', data.token);
++   const user = await this.getCurrentUser();
++   return { user, token: data.token };
+  },
+
+  async register(payload) {
+    const { data } = await api.post('/auth/register', payload);
+-   return data;
++   localStorage.setItem('token', data.token);
++   const user = await this.getCurrentUser();
++   return { user, token: data.token, isNewUser: data.isNewUser };
+  },
+
+  async googleLogin(accessToken) {
+    const { data } = await api.post('/auth/google', { access_token: accessToken });
+-   return data;
++   localStorage.setItem('token', data.token);
++   const user = await this.getCurrentUser();
++   return { user, token: data.token, isNewUser: data.isNewUser };
+  },
+```
+
+- **Verify:** Log in, then `console.log(user)` in any component using `useAuth()` — it should have `name`, `email`, `role` etc., not just `token`.
+- **Commit:** `git add client/src/services/authService.js && git commit -m "fix(auth): return user object from authService instead of raw token response"`
+
+---
+
+## Fix 2: useConversations calls non-existent endpoint (AUDIT ref: Critical)
+
+- **File:** `client/src/hooks/useConversations.js:19-22`
+- **Why:** The hook calls `GET /api/conversations` but the server only exposes `GET /api/chats` (via `chatRoutes.js`). The response shape is `{ chats: [...] }`, not `{ conversations: [...] }`.
+- **Change:**
+
+```diff
+      const { data } = await api.get('/conversations', {
+        signal: abortRef.current.signal,
+      });
+-     setConversations(data.conversations ?? data);
++     // Server returns { chats: [...] } from getUserChats
+```
+
+Replace the full fetch block:
+
+```javascript
+// BEFORE
+const { data } = await api.get('/conversations', {
+  signal: abortRef.current.signal,
+});
+setConversations(data.conversations ?? data);
+
+// AFTER
+const { data } = await api.get('/chats', {
+  signal: abortRef.current.signal,
+});
+setConversations(data.chats ?? data);
+```
+
+- **Verify:** Open the chat list page — it should load without a 404 in the network tab.
+- **Commit:** `git add client/src/hooks/useConversations.js && git commit -m "fix(chat): point useConversations at /api/chats endpoint"`
+
+---
+
+## Fix 3: useMessages REST endpoints non-existent (AUDIT ref: Critical)
+
+- **File:** `client/src/hooks/useMessages.js:25-27, 87-90`
+- **Why:** `fetchMessages` calls `GET /api/conversations/:id/messages` (doesn't exist) and `sendMessage` calls `POST /api/conversations/:id/messages` (doesn't exist). The server has `GET /api/chats/:chatId` for history and socket.io `sendMessage` for sending.
+- **Change:**
+
+```javascript
+// ── fetchMessages (line 25) ──
+// BEFORE
+const { data } = await api.get(`/conversations/${id}/messages`, {
+  signal: abortRef.current.signal,
+});
+setMessages(data.messages ?? data);
+
+// AFTER
+const { data } = await api.get(`/chats/${id}`, {
+  signal: abortRef.current.signal,
+});
+setMessages(data.messages ?? data);
+```
+
+```javascript
+// ── sendMessage (lines 86-95) ──
+// BEFORE
+try {
+  const { data } = await api.post(`/conversations/${conversationId}/messages`, {
+    text: text.trim(),
+  });
+  setMessages((prev) => [...prev, data.message ?? data]);
+
+  if (socket) {
+    socket.emit('send_message', { conversationId, message: data.message ?? data });
+    socket.emit('stop_typing', conversationId);
+  }
+}
+
+// AFTER
+try {
+  if (socket) {
+    socket.emit('sendMessage', {
+      chatId: conversationId,
+      senderId: socket.userId ?? socket.auth?.userId,
+      text: text.trim(),
+    });
+    socket.emit('user_stop_typing', conversationId);
+  }
+  // Message will arrive back via the 'receiveMessage' listener
+}
+```
+
+- **Verify:** Open a chat, send a message — it should appear in real-time without any 404 errors.
+- **Commit:** `git add client/src/hooks/useMessages.js && git commit -m "fix(chat): use correct REST + socket endpoints for messages"`
+
+---
+
+## Fix 4: Socket event name mismatches (AUDIT ref: Critical)
+
+- **File:** `client/src/hooks/useMessages.js:46, 65, 93, 94, 107, 112`
+- **Why:** Client emits `join_room`, `send_message`, `typing`, `stop_typing` and listens for `receive_message`; server expects `joinChat`, `sendMessage` and emits `receiveMessage`.
+- **Change:**
+
+```javascript
+// ── Line 46 ──
+// BEFORE
+socket.emit('join_room', conversationId);
+// AFTER
+socket.emit('joinChat', conversationId);
+
+// ── Line 65 ──
+// BEFORE
+socket.on('receive_message', onMessage);
+// AFTER
+socket.on('receiveMessage', onMessage);
+
+// ── Line 70-71 ──
+// BEFORE
+socket.emit('leave_room', conversationId);
+socket.off('receive_message', onMessage);
+// AFTER
+// Note: server has no 'leaveChat' handler, but socket.io auto-leaves on disconnect
+socket.off('receiveMessage', onMessage);
+
+// ── Line 107 ──
+// BEFORE
+if (socket && conversationId) socket.emit('typing', conversationId);
+// AFTER
+if (socket && conversationId) socket.emit('user_typing', conversationId);
+
+// ── Line 112 ──
+// BEFORE
+if (socket && conversationId) socket.emit('stop_typing', conversationId);
+// AFTER
+if (socket && conversationId) socket.emit('user_stop_typing', conversationId);
+```
+
+> **Note:** The server currently has no handler for `user_typing` / `user_stop_typing`. See **Member 4** fix for adding server-side typing event broadcast.
+
+- **Verify:** Open two browser tabs in the same chat room — messages from one tab should appear in the other.
+- **Commit:** `git add client/src/hooks/useMessages.js && git commit -m "fix(chat): align socket event names with server (joinChat, sendMessage, receiveMessage)"`
+
+---
+
+## Fix 5: Socket error handling in AuthContext (AUDIT ref: Low)
+
+- **File:** `client/src/context/AuthContext.jsx:31, 45, 58`
+- **Why:** `connectSocket()` is called without error handling — if it fails the user is authenticated but has no real-time updates and no notification.
+- **Change:**
+
+```javascript
+// BEFORE (line 31)
+connectSocket(token);
+
+// AFTER
+try {
+  connectSocket(token);
+} catch (err) {
+  console.warn('Socket connection failed, retrying in background:', err.message);
+}
+```
+
+Apply the same pattern at lines 45 and 58 (inside the `login` and `register` callbacks).
+
+- **Verify:** Temporarily break `VITE_SOCKET_URL` → login should still succeed with a console warning.
+- **Commit:** `git add client/src/context/AuthContext.jsx && git commit -m "fix(auth): handle socket connection errors gracefully in AuthContext"`
+
+---
+
+## Fix 6: refreshUser silently swallows errors (AUDIT ref: Low)
+
+- **File:** `client/src/context/AuthContext.jsx:69-71`
+- **Why:** The empty `catch` block swallows errors, making it impossible to debug profile refresh failures.
+- **Change:**
+
+```javascript
+// BEFORE
+} catch {
+  // Silently fail — user stays as-is
+}
+
+// AFTER
+} catch (err) {
+  console.error('Failed to refresh user profile:', err.message);
+}
+```
+
+- **Verify:** Force a 500 from `/users/me` — error should appear in DevTools console.
+- **Commit:** `git add client/src/context/AuthContext.jsx && git commit -m "fix(auth): log refreshUser errors instead of swallowing"`
+
+---
+
+## Fix 7: 401 interceptor auth URL list incomplete (AUDIT ref: Low)
+
+- **File:** `client/src/services/api.js:27`
+- **Why:** The `isAuthRequest` check only matches three URLs. If `/auth/logout` (or any future auth endpoint) returns 401, the interceptor will redirect to login instead of letting the caller handle it.
+- **Depends on:** Member 2 adding the `/auth/logout` route.
+- **Change:**
+
+```javascript
+// BEFORE
+const isAuthRequest = originalUrl.includes('/auth/login') || originalUrl.includes('/auth/register') || originalUrl.includes('/auth/google');
+
+// AFTER
+const isAuthRequest = originalUrl.startsWith('/auth/');
+```
+
+- **Verify:** Call `api.post('/auth/logout')` while unauthenticated — should NOT redirect to `/login`.
+- **Commit:** `git add client/src/services/api.js && git commit -m "fix(api): broaden auth URL check to cover all /auth/ endpoints"`
+
+---
+
+## Fix 8: Typing indicators not wired end-to-end (AUDIT ref: Low)
+
+- **File:** `client/src/hooks/useMessages.js:105-113`
+- **Why:** Client emits typing events but the server has no handler to broadcast them, so typing indicators never appear for other users.
+- **Depends on:** Member 4 adding `user_typing` / `user_stop_typing` handlers in `server/sockets/chatSocket.js`.
+- **Change:** No client-side code change required beyond Fix 4 (event name alignment). Once the server broadcasts these events, the existing listeners at lines 66-67 will work.
+- **Verify:** After Member 4's server fix is merged, type in a chat — the other participant should see a typing indicator.
+- **Commit:** N/A (client-side already handled by Fix 4)
+
+---
+
+## Fix 9: Page title is "client" instead of "FlatMate" (AUDIT ref: Deployment/Medium)
+
+- **File:** `client/index.html:5`
+- **Why:** The `<title>` tag was left as the Vite scaffold default "client". The browser tab and search engines show "client" instead of the app name.
+- **Change:**
+
+```html
+<!-- BEFORE -->
+<title>client</title>
+
+<!-- AFTER -->
+<title>FlatMate</title>
+```
+
+- **Verify:** Open the app in a browser → tab should say "FlatMate".
+- **Commit:** `git add client/index.html && git commit -m "fix(seo): set page title to FlatMate"`
+
+---
+
 ## 1. Setup Guide
 
 ```bash
@@ -736,4 +1024,3 @@ createRoot(document.getElementById("root")).render(
   </StrictMode>
 );
 ```
-
