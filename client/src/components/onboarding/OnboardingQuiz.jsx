@@ -64,6 +64,24 @@ const STEPS = [
   },
 ];
 
+// Maps each option's string value to a 1-5 numeric score for the backend habitVector.
+// The backend User model stores these as Number fields.
+const OPTION_SCORES = {
+  // sleepSchedule
+  early_bird: 1, flexible: 3, night_owl: 5,
+  // cleanliness
+  very_clean: 5, average: 3, relaxed: 1,
+  // smoking
+  no: 1, outside_only: 3, yes: 5,
+  // cooking
+  daily: 5, sometimes: 3, rarely: 1,
+  // guests
+  // 'rarely' already mapped above (1), 'frequently' = 5
+  occasionally: 3, frequently: 5,
+  // noise
+  quiet: 1, moderate: 3, lively: 5,
+};
+
 export default function OnboardingQuiz() {
   const { updateUser } = useAuth();
   const navigate = useNavigate();

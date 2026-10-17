@@ -22,7 +22,7 @@ export function useMessages(conversationId) {
     setMessages([]);
 
     try {
-      const { data } = await api.get(`/conversations/${id}/messages`, {
+      const { data } = await api.get(`/chats/${id}`, {
         signal: abortRef.current.signal,
       });
       setMessages(data.messages ?? data);
@@ -43,7 +43,7 @@ export function useMessages(conversationId) {
 
     if (!socket) return;
 
-    socket.emit('join_room', conversationId);
+    socket.emit('joinChat', conversationId);
 
     const onMessage = (message) => {
       setMessages((prev) => [...prev, message]);
@@ -62,13 +62,12 @@ export function useMessages(conversationId) {
       setTypingUsers((prev) => prev.filter((u) => u !== userId));
     };
 
-    socket.on('receive_message', onMessage);
+    socket.on('receiveMessage', onMessage);
     socket.on('user_typing', onTyping);
     socket.on('user_stop_typing', onStopTyping);
 
     return () => {
-      socket.emit('leave_room', conversationId);
-      socket.off('receive_message', onMessage);
+      socket.off('receiveMessage', onMessage);
       socket.off('user_typing', onTyping);
       socket.off('user_stop_typing', onStopTyping);
       clearTimeout(typingTimerRef.current);
@@ -81,20 +80,16 @@ export function useMessages(conversationId) {
       if (!text.trim() || !conversationId) return;
 
       const socket = getSocket();
+      if (!socket) {
+        setError('Chat connection unavailable. Please refresh.');
+        return;
+      }
+
       setIsSending(true);
-
       try {
-        const { data } = await api.post(`/conversations/${conversationId}/messages`, {
-          text: text.trim(),
-        });
-        setMessages((prev) => [...prev, data.message ?? data]);
-
-        if (socket) {
-          socket.emit('send_message', { conversationId, message: data.message ?? data });
-          socket.emit('stop_typing', conversationId);
-        }
+        socket.emit('sendMessage', { chatId: conversationId, text: text.trim() });
       } catch (err) {
-        setError(resolveApiError(err));
+        setError('Failed to send message. Please try again.');
       } finally {
         setIsSending(false);
       }
@@ -104,12 +99,12 @@ export function useMessages(conversationId) {
 
   const emitTyping = useCallback(() => {
     const socket = getSocket();
-    if (socket && conversationId) socket.emit('typing', conversationId);
+    if (socket && conversationId) socket.emit('user_typing', { chatId: conversationId });
   }, [conversationId]);
 
   const emitStopTyping = useCallback(() => {
     const socket = getSocket();
-    if (socket && conversationId) socket.emit('stop_typing', conversationId);
+    if (socket && conversationId) socket.emit('user_stop_typing', { chatId: conversationId });
   }, [conversationId]);
 
   return {
