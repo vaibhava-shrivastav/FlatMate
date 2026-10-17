@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useListings } from '@hooks/useListings';
 import { useAuth } from '@hooks/useAuth';
 import SearchBar from './SearchBar';
@@ -13,6 +14,7 @@ import ErrorBanner from '@components/common/ErrorBanner';
 export default function Dashboard() {
   const { user } = useAuth();
   const [view, setView] = useState('grid');
+  const [searchParams] = useSearchParams();
 
   const {
     listings,
@@ -23,6 +25,13 @@ export default function Dashboard() {
     resetFilters,
     retry,
   } = useListings();
+
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      updateFilter('search', searchFromUrl);
+    }
+  }, [searchParams, updateFilter]);
 
   const hasActiveFilters = Object.entries(filters).some(
     ([key, val]) => val !== '' && !(key === 'sortBy' && val === 'newest')
