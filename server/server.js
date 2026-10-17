@@ -39,9 +39,13 @@ const path = require("path");
 
 // Serve React production build in production
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/dist")));
-  app.get("/{*splat}", (req, res) => {
-    res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
+  const clientDist = path.join(__dirname, "../client/dist");
+  app.use(express.static(clientDist));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api")) {
+      return res.sendFile(path.join(clientDist, "index.html"));
+    }
+    next();
   });
 }
 
