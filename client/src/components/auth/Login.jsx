@@ -55,8 +55,8 @@ export default function Login() {
 
     setIsSubmitting(true);
     try {
-      const data = await authService.login(values.email, values.password);
-      login(data.user, data.token);
+      const { user, token } = await authService.login(values.email, values.password);
+      login(user, token);
       navigate(redirectTo, { replace: true });
     } catch (error) {
       setServerError(resolveApiError(error));

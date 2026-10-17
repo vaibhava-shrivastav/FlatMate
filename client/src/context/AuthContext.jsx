@@ -28,7 +28,11 @@ export function AuthProvider({ children }) {
       .getCurrentUser()
       .then((userData) => {
         setUser(userData);
-        connectSocket(token);
+        try {
+          connectSocket(token);
+        } catch (socketErr) {
+          console.error('[AuthContext] Socket connection failed, continuing without real-time:', socketErr);
+        }
       })
       .catch(() => {
         tokenManager.remove();
@@ -39,23 +43,33 @@ export function AuthProvider({ children }) {
   }, []);
 
   // ─── Actions ─────────────────────────────────────────────────────────────
+  // Accepts { user, token } returned directly from authService to avoid a duplicate /users/me call.
   const login = useCallback((userData, token) => {
     tokenManager.set(token);
     setUser(userData);
-    connectSocket(token);
+    try {
+      connectSocket(token);
+    } catch (socketErr) {
+      console.error('[AuthContext] Socket connection failed after login, continuing without real-time:', socketErr);
+    }
   }, []);
 
-  const logout = useCallback(async () => {
-    await authService.logout();
+  const logout = useCallback(() => {
+    authService.logout();
     tokenManager.remove();
     setUser(null);
     disconnectSocket();
   }, []);
 
+  // Accepts { user, token } returned directly from authService to avoid a duplicate /users/me call.
   const register = useCallback((userData, token) => {
     tokenManager.set(token);
     setUser(userData);
-    connectSocket(token);
+    try {
+      connectSocket(token);
+    } catch (socketErr) {
+      console.error('[AuthContext] Socket connection failed after register, continuing without real-time:', socketErr);
+    }
   }, []);
 
   const updateUser = useCallback((patch) => {
@@ -66,8 +80,8 @@ export function AuthProvider({ children }) {
     try {
       const userData = await authService.refreshProfile();
       setUser(userData);
-    } catch {
-      // Silently fail — user stays as-is
+    } catch (err) {
+      console.error('[AuthContext] refreshUser failed, keeping existing user state:', err);
     }
   }, []);
 

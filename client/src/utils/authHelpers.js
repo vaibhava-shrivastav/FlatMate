@@ -1,6 +1,6 @@
 export const ROLES = {
-  SEARCHING_ROOM: 'searching',
-  HAS_ROOM: 'hosting',
+  SEARCHING_ROOM: 'SEARCHING_ROOM',
+  HAS_ROOM: 'HAS_ROOM',
   ADMIN: 'admin',
 };
 

@@ -22,12 +22,12 @@ const INITIAL_VALUES = {
 
 const ROLES = [
   {
-    value: 'searching',
+    value: 'SEARCHING_ROOM',
     label: 'Looking for a room',
     description: 'I need to find a place to stay.',
   },
   {
-    value: 'hosting',
+    value: 'HAS_ROOM',
     label: 'I have a room',
     description: 'I have a space available to rent.',
   },
@@ -135,13 +135,13 @@ export default function Register() {
 
     setIsSubmitting(true);
     try {
-      const data = await authService.register({
-        fullName: values.fullName.trim(),
+      const { user, token } = await authService.register({
+        name: values.fullName.trim(),
         email: values.email,
         password: values.password,
         role: values.role,
       });
-      register(data.user, data.token);
+      register(user, token);
       navigate('/onboarding', { replace: true });
     } catch (error) {
       setServerError(resolveApiError(error));

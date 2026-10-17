@@ -53,7 +53,7 @@ export default function ChatWindow({ conversation, onBack, showBack }) {
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-text-muted">
-              Say hello to {participant?.fullName?.split(' ')[0] ?? 'your match'} 👋
+              Say hello to {participant?.name?.split(' ')[0] ?? 'your match'} 👋
             </p>
           </div>
         ) : (
@@ -74,7 +74,7 @@ export default function ChatWindow({ conversation, onBack, showBack }) {
         )}
 
         {isTyping && (
-          <TypingIndicator name={participant?.fullName?.split(' ')[0] ?? 'Someone'} />
+          <TypingIndicator name={participant?.name?.split(' ')[0] ?? 'Someone'} />
         )}
 
         <div ref={bottomRef} />

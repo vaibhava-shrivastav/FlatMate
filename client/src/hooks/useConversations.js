@@ -16,10 +16,10 @@ export function useConversations() {
     setError('');
 
     try {
-      const { data } = await api.get('/conversations', {
+      const { data } = await api.get('/chats', {
         signal: abortRef.current.signal,
       });
-      setConversations(data.conversations ?? data);
+      setConversations(data.chats ?? data);
     } catch (err) {
       if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
         setError(resolveApiError(err));
