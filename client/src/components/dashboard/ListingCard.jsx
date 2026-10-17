@@ -63,7 +63,7 @@ export default function ListingCard({ listing }) {
         'group relative bg-card border border-border rounded-[var(--radius)] overflow-hidden',
         'flex flex-col cursor-pointer',
         'transition-all duration-200',
-        'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_8px_30px_rgba(0,0,0,0.4)]',
+        'hover:border-stone-300',
       )}
       aria-label={`Listing: ${title}`}
     >
@@ -89,9 +89,9 @@ export default function ListingCard({ listing }) {
           aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
           className={cn(
             'absolute top-3 right-3 flex items-center justify-center w-8 h-8 rounded-full',
-            'bg-background/70 backdrop-blur-sm border border-border/50',
+            'bg-white/90 border border-border',
             'transition-all duration-200 cursor-pointer active:scale-[0.92]',
-            'hover:border-border',
+            'hover:border-stone-300',
             isFavorited ? 'text-danger' : 'text-text-muted hover:text-text',
           )}
         >
