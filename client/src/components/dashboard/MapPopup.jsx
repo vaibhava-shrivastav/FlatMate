@@ -50,7 +50,14 @@ export default function MapPopup({ listing }) {
         </div>
 
         {ownerName && (
-          <div className="flex items-center gap-1 text-xs text-text-muted">
+          <div
+            className="flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (owner?._id) navigate(`/user/${owner._id}`);
+            }}
+            title="View host profile"
+          >
             <span>{ownerName}</span>
             {isVerified && (
               <BadgeCheck className="w-3.5 h-3.5 text-primary shrink-0" aria-label="Verified" />

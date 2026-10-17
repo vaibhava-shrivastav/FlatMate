@@ -1,9 +1,30 @@
 const Listing = require("../models/Listing");
 
+const DEFAULT_GREATER_NOIDA_COORDS = [77.5030, 28.4744];
+
 exports.createListing = async (req, res) => {
   try {
-    const listing = await Listing.create({ ...req.body, owner: req.user.id });
-    res.status(201).json(listing);
+    const data = { ...req.body, owner: req.user.id };
+
+    // Ensure valid GeoJSON location structure
+    if (!data.location) {
+      data.location = {
+        type: "Point",
+        coordinates: DEFAULT_GREATER_NOIDA_COORDS,
+        city: "Greater Noida",
+        area: "Greater Noida",
+      };
+    } else {
+      if (!data.location.type) data.location.type = "Point";
+      if (!Array.isArray(data.location.coordinates) || data.location.coordinates.length < 2) {
+        data.location.coordinates = DEFAULT_GREATER_NOIDA_COORDS;
+      }
+      if (!data.location.city) data.location.city = "Greater Noida";
+    }
+
+    const listing = await Listing.create(data);
+    const populated = await Listing.findById(listing._id).populate("owner", "name role isVerified");
+    res.status(201).json(populated || listing);
   } catch (err) {
     res.status(400).json({ message: "Could not create listing.", error: err.message });
   }

@@ -14,13 +14,28 @@ const FILTER_CONFIGS = [
     ],
   },
   {
-    key: 'gender',
-    label: 'Gender pref.',
+    key: 'budgetRange',
+    label: 'Budget',
     options: [
-      { value: '', label: 'Any' },
-      { value: 'male', label: 'Male only' },
-      { value: 'female', label: 'Female only' },
-      { value: 'mixed', label: 'Mixed' },
+      { value: '', label: 'Any budget' },
+      { value: 'under_7k', label: 'Under ₹7,000' },
+      { value: '7k_10k', label: '₹7,000 – ₹10,000' },
+      { value: '10k_15k', label: '₹10,000 – ₹15,000' },
+      { value: 'above_15k', label: 'Above ₹15,000' },
+    ],
+  },
+  {
+    key: 'sector',
+    label: 'Greater Noida Sector',
+    options: [
+      { value: '', label: 'All Sectors' },
+      { value: 'Knowledge Park', label: 'Knowledge Park' },
+      { value: 'Pari Chowk', label: 'Pari Chowk / Beta' },
+      { value: 'Alpha', label: 'Sector Alpha' },
+      { value: 'Delta', label: 'Sector Delta' },
+      { value: 'Omega', label: 'NRI City / Omega' },
+      { value: 'Gamma', label: 'Sector Gamma (Jagat Farm)' },
+      { value: 'Gaur City', label: 'Gaur City (West)' },
     ],
   },
   {
@@ -29,8 +44,6 @@ const FILTER_CONFIGS = [
     options: [
       { value: '', label: 'Any time' },
       { value: 'now', label: 'Available now' },
-      { value: 'month', label: 'This month' },
-      { value: 'next_month', label: 'Next month' },
     ],
   },
   {
@@ -38,10 +51,9 @@ const FILTER_CONFIGS = [
     label: 'Sort by',
     options: [
       { value: 'newest', label: 'Newest first' },
-      { value: 'oldest', label: 'Oldest first' },
+      { value: 'compatibility', label: 'Best match' },
       { value: 'price_asc', label: 'Price: low to high' },
       { value: 'price_desc', label: 'Price: high to low' },
-      { value: 'compatibility', label: 'Best match' },
     ],
   },
 ];

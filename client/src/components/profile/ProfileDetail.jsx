@@ -289,10 +289,23 @@ export default function ProfileDetail({ listingId: propListingId }) {
           </div>
         </div>
 
-        <Button onClick={handleStartChat} className="w-full sm:w-auto shrink-0 flex items-center gap-2">
-          <MessageSquare className="w-4 h-4" />
-          <span>Message Host</span>
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {owner?._id && (
+            <Button
+              as={Link}
+              to={`/user/${owner._id}`}
+              variant="secondary"
+              size="md"
+              className="w-full sm:w-auto text-xs"
+            >
+              View Host Profile
+            </Button>
+          )}
+          <Button onClick={handleStartChat} size="md" className="w-full sm:w-auto shrink-0 flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            <span>Message Host</span>
+          </Button>
+        </div>
       </div>
 
       {/* Description */}

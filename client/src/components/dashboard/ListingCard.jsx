@@ -149,7 +149,14 @@ export default function ListingCard({ listing }) {
               {formatCurrency(rent)}
               <span className="text-xs font-normal text-text-muted">/mo</span>
             </span>
-            <div className="flex items-center gap-1 text-xs text-text-muted">
+            <div
+              className="flex items-center gap-1 text-xs text-text-muted hover:text-primary transition-colors cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (owner?._id) navigate(`/user/${owner._id}`);
+              }}
+              title="View host profile"
+            >
               <span>{ownerName}</span>
               {isVerified && (
                 <BadgeCheck className="w-3.5 h-3.5 text-primary shrink-0" aria-label="Verified" />
@@ -163,7 +170,7 @@ export default function ListingCard({ listing }) {
             onClick={handleViewCompatibility}
             className="shrink-0 text-xs"
           >
-            View profile
+            View room
           </Button>
         </div>
       </div>
