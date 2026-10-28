@@ -310,9 +310,20 @@ async function seed({ manageConnection = true } = {}) {
 
     console.log(`Ensured ${createdUsers.length} Greater Noida demo hosts exist.`);
 
-    // Clear previous listings so only Greater Noida listings are present
-    await Listing.deleteMany({});
-    console.log("Cleared old listings.");
+// In manual mode, clear old demo listings only; skip if production data exists
+if (manageConnection) {
+  const existingCount = await Listing.countDocuments();
+  if (existingCount > 0) {
+    console.log(`Found ${existingCount} existing listings. Skipping seed to preserve data.`);
+    console.log("Use --force to clear and reseed: FORCE_SEED=1 node scripts/seed.js");
+    if (!process.env.FORCE_SEED) {
+      await mongoose.disconnect();
+      return;
+    }
+  }
+  await Listing.deleteMany({});
+  console.log("Cleared old listings (FORCE_SEED enabled).");
+}
 
     // Insert Greater Noida demo listings
     const listingsToInsert = demoListingsData.map((item) => {
