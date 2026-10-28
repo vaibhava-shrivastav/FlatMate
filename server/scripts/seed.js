@@ -100,6 +100,25 @@ const demoUsers = [
       coordinates: [77.428, 28.605],
     },
   },
+    {
+    name: "Priya Mehra",
+    email: "priya.mehra@example.com",
+    role: "SEARCHING_ROOM",
+    budget: 9000,
+    onboardingComplete: true,
+    habitVector: {
+      sleepSchedule: 8,
+      cleanliness: 9,
+      smoking: 1,
+      cooking: 7,
+      guests: 3,
+      noise: 2,
+    },
+    location: {
+      type: "Point",
+      coordinates: [77.500, 28.470],
+    },
+  }
 ];
 
 const demoListingsData = [
