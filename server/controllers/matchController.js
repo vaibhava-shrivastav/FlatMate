@@ -1,5 +1,5 @@
-const { runMatchingPipeline } = require("../services/matchingEngine");
-const Match = require("../models/Match");
+const { runMatchingPipeline, getOrEvaluateMatch } = require("../services/matchingEngine");
+const User = require("../models/User");
 
 exports.getMatchesForUser = async (req, res) => {
   try {
@@ -13,10 +13,18 @@ exports.getMatchesForUser = async (req, res) => {
 exports.getMatchDetail = async (req, res) => {
   try {
     const { id } = req.params;
-    const [first, second] = [req.user.id, id].sort();
-    const match = await Match.findOne({ userA: first, userB: second });
-    if (!match) return res.status(404).json({ message: "Match not found." });
-    res.status(200).json(match);
+    const currentUser = await User.findById(req.user.id);
+    const targetUser = await User.findById(id);
+
+    if (!currentUser) {
+      return res.status(404).json({ message: "Current user not found." });
+    }
+    if (!targetUser) {
+      return res.status(404).json({ message: "Candidate user not found." });
+    }
+
+    const match = await getOrEvaluateMatch(currentUser, targetUser);
+    res.status(200).json({ compatibility: match });
   } catch (err) {
     res.status(500).json({ message: "Error fetching match.", error: err.message });
   }

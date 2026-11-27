@@ -29,9 +29,12 @@ const listingSchema = new mongoose.Schema(
         type: [Number], // [longitude, latitude]
         required: true, // listings must have a location (unlike User, no default)
       },
+      city: { type: String },
+      area: { type: String },
     },
 
     images: [{ type: String }], // array of image URLs
+    amenities: [{ type: String }],
 
     isActive: {
       type: Boolean,

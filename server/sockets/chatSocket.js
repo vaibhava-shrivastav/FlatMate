@@ -17,39 +17,83 @@ module.exports = function registerChatSocket(io) {
   io.on("connection", (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
-    socket.on("joinChat", (chatId) => {
-      socket.join(chatId);
-    });
+    const joinRoom = (data) => {
+      const chatId =
+        typeof data === "object" ? data.chatId || data.conversationId : data;
+      if (chatId) socket.join(chatId);
+    };
+    const leaveRoom = (data) => {
+      const chatId =
+        typeof data === "object" ? data.chatId || data.conversationId : data;
+      if (chatId) socket.leave(chatId);
+    };
 
-    socket.on("sendMessage", async ({ chatId, senderId, text, participants }) => {
+    socket.on("joinChat", joinRoom);
+    socket.on("join_room", joinRoom);
+    socket.on("leave_room", leaveRoom);
+
+    socket.on("sendMessage", async (data) => {
       try {
-        if (!text?.trim()) return;
+        const chatId = data.chatId || data.conversationId;
+        const text = data.text;
+        const recipientId = data.recipientId;
+        if (!chatId || !text?.trim()) return;
 
-        // Validate: senderId must match the authenticated socket user
-        if (senderId && senderId !== socket.userId) {
-          return socket.emit("errorMessage", { message: "Sender ID mismatch." });
-        }
+        const participants = [...new Set([
+          socket.userId,
+          ...(data.participants || []),
+          ...(recipientId ? [recipientId] : []),
+        ])];
 
-        // Use the authenticated userId as the sender (ignore client-supplied senderId)
         const message = await Message.create({
           chatId,
           senderId: socket.userId,
-          text,
+          text: text.trim(),
           participants,
         });
-        io.to(chatId).emit("receiveMessage", message);
+
+        const populated = await Message.findById(message._id).populate(
+          "senderId",
+          "name avatar"
+        );
+        const payload = {
+          ...message.toObject(),
+          sender: populated.senderId,
+        };
+
+        io.to(chatId).emit("receiveMessage", payload);
+        io.to(chatId).emit("receive_message", payload);
       } catch (err) {
         socket.emit("errorMessage", { message: "Failed to send message." });
       }
     });
 
-    socket.on("user_typing", (chatId) => {
-      socket.to(chatId).emit("user_typing", { userId: socket.userId });
+    socket.on("send_message", async (data) => {
+      const chatId = data.conversationId || data.chatId;
+      const message = data.message;
+      if (!chatId || !message?.text?.trim()) return;
+      const result = {
+        ...message,
+        sender: message.sender || message.senderId || { _id: socket.userId },
+      };
+      io.to(chatId).emit("receiveMessage", result);
+      io.to(chatId).emit("receive_message", result);
     });
 
-    socket.on("user_stop_typing", (chatId) => {
-      socket.to(chatId).emit("user_stop_typing", { userId: socket.userId });
-    });
+    const handleTyping = (eventName, data) => {
+      const targetRoom =
+        typeof data === "object"
+          ? data.chatId || data.conversationId
+          : data;
+      if (targetRoom) {
+        socket.to(targetRoom).emit(eventName, { userId: socket.userId });
+      }
+    };
+
+    socket.on("user_typing", (data) => handleTyping("user_typing", data));
+    socket.on("typing", (data) => handleTyping("user_typing", data));
+    socket.on("user_stop_typing", (data) => handleTyping("user_stop_typing", data));
+    socket.on("stop_typing", (data) => handleTyping("user_stop_typing", data));
 
     socket.on("disconnect", () => {
       console.log(`Socket disconnected: ${socket.id}`);

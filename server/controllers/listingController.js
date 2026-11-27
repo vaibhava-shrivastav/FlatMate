@@ -2,8 +2,52 @@ const Listing = require("../models/Listing");
 
 exports.createListing = async (req, res) => {
   try {
-    const listing = await Listing.create({ ...req.body, owner: req.user.id });
-    res.status(201).json(listing);
+    const data = { ...req.body, owner: req.user.id };
+
+    if (req.files && req.files.length > 0) {
+      data.images = req.files.map((file) => file.path);
+    } else if (typeof data.images === "string") {
+      try {
+        data.images = JSON.parse(data.images);
+      } catch {
+        data.images = [data.images];
+      }
+    }
+
+    if (typeof data.location === "string") {
+      try {
+        data.location = JSON.parse(data.location);
+      } catch {
+        data.location = null;
+      }
+    }
+    if (typeof data.amenities === "string") {
+      try {
+        data.amenities = JSON.parse(data.amenities);
+      } catch {
+        data.amenities = data.amenities
+          .split(",")
+          .map((amenity) => amenity.trim())
+          .filter(Boolean);
+      }
+    }
+
+    if (!data.location || !Array.isArray(data.location.coordinates)) {
+      data.location = {
+        type: "Point",
+        coordinates: [77.503, 28.4744],
+        city: "Greater Noida",
+        area: "Knowledge Park II",
+      };
+    }
+
+    const listing = await Listing.create(data);
+    const populated = await Listing.findById(listing._id).populate(
+      "owner",
+      "name role avatar isVerified"
+    );
+
+    res.status(201).json({ listing: populated || listing });
   } catch (err) {
     res.status(400).json({ message: "Could not create listing.", error: err.message });
   }
