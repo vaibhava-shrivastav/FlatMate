@@ -43,6 +43,7 @@ const listingSchema = new mongoose.Schema(
     availableFrom: { type: Date, default: Date.now },
     amenities: [{ type: String }],
     images: [{ type: String }], // array of image URLs
+    amenities: [{ type: String }],
 
     isActive: {
       type: Boolean,
