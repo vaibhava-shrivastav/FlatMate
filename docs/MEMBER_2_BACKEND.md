@@ -47,52 +47,88 @@ In `server/routes/authRoutes.js`:
 
 ---
 
-## Fix 2: Google access token audience not verified (AUDIT ref: Medium)
+## Fix 2: Google access token audience not verified & payload parameter support (AUDIT ref: Medium)
 
-- **File:** `server/controllers/authController.js:46-80`
-- **Why:** The `googleAuth` function fetches user info from Google's userinfo endpoint using the access token but never verifies the token's audience (`aud`) matches our `GOOGLE_CLIENT_ID`. A token minted for a different app could be used to authenticate.
+- **File:** `server/controllers/authController.js:46-85`
+- **Why:** 
+  1. The `googleAuth` function fetches user info from Google's userinfo endpoint using the access token but never verifies the token's audience (`aud`) matches our `GOOGLE_CLIENT_ID`. A token minted for a different app could be used to authenticate.
+  2. **Frontend Compatibility:** The frontend client uses `@react-oauth/google`'s `useGoogleLogin` hook, which sends `{ access_token: "..." }`, while legacy scaffolds sent `{ credential: "..." }`. The backend must accept `const access_token = req.body.access_token || req.body.credential;` so Google login works reliably without breaking changes.
 - **Change:**
 
 ```javascript
-// BEFORE (after the userinfo fetch, around line 80-82)
-console.log("[GoogleAuth] Got user info for:", payload.email);
+exports.googleAuth = async (req, res) => {
+  try {
+    // Support both access_token (sent by useGoogleLogin) and credential
+    const access_token = req.body.access_token || req.body.credential;
 
-let user = await User.findOne({ googleId: payload.sub });
+    if (!access_token) {
+      return res.status(400).json({ message: "No access token provided." });
+    }
 
-// AFTER — add token info verification between the userinfo fetch and the user lookup
-console.log("[GoogleAuth] Got user info for:", payload.email);
+    const https = require('https');
 
-// Verify the access token was issued for our client
-const tokenInfo = await new Promise((resolve, reject) => {
-  const tiOptions = {
-    hostname: 'oauth2.googleapis.com',
-    path: `/tokeninfo?access_token=${access_token}`,
-    method: 'GET',
-  };
-  const tiReq = https.request(tiOptions, (tiRes) => {
-    let tiData = '';
-    tiRes.on('data', (chunk) => tiData += chunk);
-    tiRes.on('end', () => {
-      if (tiRes.statusCode >= 200 && tiRes.statusCode < 300) {
-        resolve(JSON.parse(tiData));
-      } else {
-        reject(new Error(`Token info error: ${tiRes.statusCode} ${tiData}`));
-      }
+    // 1. Fetch user info from Google's userinfo endpoint
+    const userinfo = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'www.googleapis.com',
+        path: `/oauth2/v3/userinfo?access_token=${access_token}`,
+        method: 'GET',
+        headers: { Authorization: `Bearer ${access_token}` }
+      };
+      const request = https.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => data += chunk);
+        response.on('end', () => {
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            try {
+              resolve(JSON.parse(data));
+            } catch (err) {
+              reject(new Error('Failed to parse user info response'));
+            }
+          } else {
+            reject(new Error(`Failed to fetch user info: ${response.statusCode}`));
+          }
+        });
+      });
+      request.on('error', reject);
+      request.end();
     });
-  });
-  tiReq.on('error', reject);
-  tiReq.end();
-});
 
-if (tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
-  return res.status(401).json({ message: "Token audience mismatch." });
-}
+    const payload = userinfo;
+    console.log("[GoogleAuth] Got user info for:", payload.email);
 
-let user = await User.findOne({ googleId: payload.sub });
+    // 2. Verify the access token audience matches GOOGLE_CLIENT_ID
+    const tokenInfo = await new Promise((resolve, reject) => {
+      const tiOptions = {
+        hostname: 'oauth2.googleapis.com',
+        path: `/tokeninfo?access_token=${access_token}`,
+        method: 'GET',
+      };
+      const tiReq = https.request(tiOptions, (tiRes) => {
+        let tiData = '';
+        tiRes.on('data', (chunk) => tiData += chunk);
+        tiRes.on('end', () => {
+          if (tiRes.statusCode >= 200 && tiRes.statusCode < 300) {
+            resolve(JSON.parse(tiData));
+          } else {
+            reject(new Error(`Token info error: ${tiRes.statusCode} ${tiData}`));
+          }
+        });
+      });
+      tiReq.on('error', reject);
+      tiReq.end();
+    });
+
+    if (tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
+      return res.status(401).json({ message: "Token audience mismatch." });
+    }
+
+    let user = await User.findOne({ googleId: payload.sub });
+    let isNewUser = false;
 ```
 
-- **Verify:** Send a Google access token issued for a different client ID → should get 401 "Token audience mismatch."
-- **Commit:** `git add server/controllers/authController.js && git commit -m "fix(auth): verify Google access token audience before accepting"`
+- **Verify:** Send a Google access token issued for a different client ID → should get 401 "Token audience mismatch." Test login via frontend `GoogleAuthButton` → should succeed without token missing errors.
+- **Commit:** `git add server/controllers/authController.js && git commit -m "fix(auth): verify Google access token audience and accept access_token or credential"`
 
 ---
 
@@ -211,24 +247,98 @@ exports.login = async (req, res) => {
 
 exports.googleAuth = async (req, res) => {
   try {
-    const { credential } = req.body;
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const access_token = req.body.access_token || req.body.credential;
+
+    if (!access_token) {
+      return res.status(400).json({ message: "No access token provided." });
+    }
+
+    const https = require('https');
+
+    // Fetch user info from Google's userinfo endpoint using the access token
+    const userinfo = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'www.googleapis.com',
+        path: `/oauth2/v3/userinfo?access_token=${access_token}`,
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      };
+      const request = https.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => data += chunk);
+        response.on('end', () => {
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            try {
+              resolve(JSON.parse(data));
+            } catch (err) {
+              reject(new Error('Failed to parse user info response'));
+            }
+          } else {
+            reject(new Error(`Failed to fetch user info: ${response.statusCode}`));
+          }
+        });
+      });
+      request.on('error', reject);
+      request.end();
     });
-    const payload = ticket.getPayload();
+
+    const payload = userinfo;
+    console.log("[GoogleAuth] Got user info for:", payload.email);
+
+    // Verify the access token was issued for our client
+    const tokenInfo = await new Promise((resolve, reject) => {
+      const tiOptions = {
+        hostname: 'oauth2.googleapis.com',
+        path: `/tokeninfo?access_token=${access_token}`,
+        method: 'GET',
+      };
+      const tiReq = https.request(tiOptions, (tiRes) => {
+        let tiData = '';
+        tiRes.on('data', (chunk) => tiData += chunk);
+        tiRes.on('end', () => {
+          if (tiRes.statusCode >= 200 && tiRes.statusCode < 300) {
+            resolve(JSON.parse(tiData));
+          } else {
+            reject(new Error(`Token info error: ${tiRes.statusCode} ${tiData}`));
+          }
+        });
+      });
+      tiReq.on('error', reject);
+      tiReq.end();
+    });
+
+    if (tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
+      return res.status(401).json({ message: "Token audience mismatch." });
+    }
 
     let user = await User.findOne({ googleId: payload.sub });
     let isNewUser = false;
 
     if (!user) {
-      user = await User.create({
-        name: payload.name,
-        email: payload.email,
-        googleId: payload.sub,
-        authProvider: "google",
-      });
-      isNewUser = true;
+      // Check if user exists with this email (to link Google account)
+      user = await User.findOne({ email: payload.email });
+      if (user) {
+        // Check for conflicting Google link (Fix 3)
+        if (user.googleId && user.googleId !== payload.sub) {
+          return res.status(409).json({
+            message: "This email is already linked to a different Google account.",
+          });
+        }
+        // Link Google account to existing email user
+        user.googleId = payload.sub;
+        await user.save();
+      } else {
+        // Create new user with Google account
+        user = await User.create({
+          name: payload.name,
+          email: payload.email,
+          googleId: payload.sub,
+          authProvider: "google",
+        });
+        isNewUser = true;
+      }
     }
 
     res.status(200).json({ token: signToken(user._id), isNewUser });
@@ -236,17 +346,25 @@ exports.googleAuth = async (req, res) => {
     res.status(401).json({ message: "Google authentication failed.", error: err.message });
   }
 };
+
+// Logout endpoint (Fix 1)
+exports.logout = async (req, res) => {
+  // JWT is stateless — nothing to invalidate server-side.
+  // This endpoint exists so the client gets a 200 instead of a 404.
+  res.status(200).json({ message: "Logged out successfully." });
+};
 ```
 
 ## 4. authRoutes.js
 
 ```javascript
 const router = require("express").Router();
-const { register, login, googleAuth } = require("../controllers/authController");
+const { register, login, googleAuth, logout } = require("../controllers/authController");
 
 router.post("/register", register);
 router.post("/login", login);
 router.post("/google", googleAuth);
+router.post("/logout", logout);
 
 module.exports = router;
 ```

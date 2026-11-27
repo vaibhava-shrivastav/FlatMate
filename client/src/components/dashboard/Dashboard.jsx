@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { useListings } from '@hooks/useListings';
 import { useAuth } from '@hooks/useAuth';
 import SearchBar from './SearchBar';
@@ -8,11 +10,15 @@ import ListingCard from './ListingCard';
 import MapView from './MapView';
 import SkeletonGrid from './SkeletonGrid';
 import EmptyState from './EmptyState';
+import AddListingModal from './AddListingModal';
+import Button from '@components/common/Button';
 import ErrorBanner from '@components/common/ErrorBanner';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [view, setView] = useState('grid');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [searchParams] = useSearchParams();
 
   const {
     listings,
@@ -21,25 +27,43 @@ export default function Dashboard() {
     error,
     updateFilter,
     resetFilters,
+    addListing,
     retry,
   } = useListings();
+
+  useEffect(() => {
+    const searchFromUrl = searchParams.get('search');
+    if (searchFromUrl) {
+      updateFilter('search', searchFromUrl);
+    }
+  }, [searchParams, updateFilter]);
 
   const hasActiveFilters = Object.entries(filters).some(
     ([key, val]) => val !== '' && !(key === 'sortBy' && val === 'newest')
   );
 
-  const greeting = user?.fullName
-    ? `Good to see you, ${user.fullName.split(' ')[0]}.`
-    : 'Find your next home.';
+  const greeting = user?.fullName || user?.name
+    ? `Good to see you, ${(user.fullName || user.name).split(' ')[0]}.`
+    : 'Your listings';
 
   return (
     <div className="flex flex-col gap-6">
       {/* Page header */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold text-text tracking-tight">{greeting}</h1>
-        <p className="text-sm text-text-muted">
-          Browse verified rooms and find your perfect roommate match.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold text-text tracking-tight">{greeting}</h1>
+          <p className="text-sm text-text-muted">
+            Browse available rooms in Greater Noida or list your open space.
+          </p>
+        </div>
+
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          className="self-start sm:self-auto flex items-center gap-1.5 shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Post a Room</span>
+        </Button>
       </div>
 
       {/* Search + View toggle row */}
@@ -86,6 +110,15 @@ export default function Dashboard() {
           ))}
         </div>
       )}
+
+      {/* Add Listing Modal */}
+      <AddListingModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onCreated={(created) => {
+          addListing(created);
+        }}
+      />
     </div>
   );
 }

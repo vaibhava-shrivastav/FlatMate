@@ -70,9 +70,9 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full max-w-[400px] mx-auto">
+    <div className="w-full max-w-sm mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-text tracking-tight">Welcome back</h1>
+        <h1 className="text-2xl font-semibold text-text tracking-tight">Sign in</h1>
         <p className="mt-1.5 text-sm text-text-muted">Sign in to your account.</p>
       </div>
 

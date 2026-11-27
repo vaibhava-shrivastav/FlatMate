@@ -75,8 +75,8 @@ export default function MessageBubble({ message, isOwn, showAvatar, prevMessage 
             className={cn(
               'px-3.5 py-2.5 text-sm leading-relaxed break-words',
               isOwn
-                ? 'bg-primary text-white rounded-2xl rounded-br-sm'
-                : 'bg-card border border-border text-text rounded-2xl rounded-bl-sm'
+                ? 'bg-primary text-white rounded-lg rounded-br-sm'
+                : 'bg-stone-100 text-text rounded-lg rounded-bl-sm'
             )}
           >
             {text}

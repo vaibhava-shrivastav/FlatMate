@@ -17,8 +17,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const INDIA_CENTER = [20.5937, 78.9629];
-const DEFAULT_ZOOM = 5;
+const GREATER_NOIDA_CENTER = [28.4744, 77.5030];
+const DEFAULT_ZOOM = 12;
 
 function BoundsController({ positions }) {
   const map = useMap();
@@ -96,7 +96,7 @@ export default function MapView({ listings = [], isLoading = false, hasFilters =
 
   const defaultCenter = validListings.length > 0
     ? getLatLng(validListings[0])
-    : INDIA_CENTER;
+    : GREATER_NOIDA_CENTER;
 
   const positions = useMemo(
     () => validListings.map((l) => getLatLng(l)),

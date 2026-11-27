@@ -4,26 +4,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#09090B',
-        card: '#111827',
-        border: '#1F2937',
+        background: '#fafaf9',
+        card: '#ffffff',
+        border: '#e7e5e4',
         primary: {
-          DEFAULT: '#2563EB',
-          hover: '#3B82F6',
+          DEFAULT: '#0f766e',
+          hover: '#0d9488',
         },
         text: {
-          DEFAULT: '#FFFFFF',
-          muted: '#9CA3AF',
+          DEFAULT: '#1c1917',
+          muted: '#78716c',
         },
-        success: '#22C55E',
-        danger: '#EF4444',
+        success: '#15803d',
+        danger: '#b91c1c',
+        warning: '#b45309',
       },
       borderRadius: {
-        DEFAULT: '12px',
-        card: '12px',
+        DEFAULT: '6px',
+        card: '8px',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['system-ui', '-apple-system', 'sans-serif'],
       },
     },
   },

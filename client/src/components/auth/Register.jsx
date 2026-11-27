@@ -155,10 +155,10 @@ export default function Register() {
   };
 
   return (
-    <div className="w-full max-w-[440px] mx-auto">
+    <div className="w-full max-w-sm mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-text tracking-tight">Create your account</h1>
-        <p className="mt-1.5 text-sm text-text-muted">Find your perfect roommate Here.</p>
+        <h1 className="text-2xl font-semibold text-text tracking-tight">Create account</h1>
+        <p className="mt-1.5 text-sm text-text-muted">Set up your profile to get started.</p>
       </div>
 
       <div className="bg-card border border-border rounded-[var(--radius)] p-6 flex flex-col gap-5">
