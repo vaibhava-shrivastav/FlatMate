@@ -33,6 +33,8 @@ export { DaySeparator };
 
 export default function MessageBubble({ message, isOwn, showAvatar, prevMessage }) {
   const { text, createdAt, sender } = message;
+  const senderObj = (sender && typeof sender === 'object') ? sender : ((message.senderId && typeof message.senderId === 'object') ? message.senderId : {});
+  const senderDisplayName = senderObj.name || senderObj.fullName || 'User';
 
   const showDaySeparator =
     !prevMessage ||
@@ -54,15 +56,15 @@ export default function MessageBubble({ message, isOwn, showAvatar, prevMessage 
           <div className="w-7 h-7 shrink-0 mb-0.5">
             {showAvatar ? (
               <div className="w-7 h-7 rounded-full bg-border flex items-center justify-center overflow-hidden">
-                {sender?.avatar ? (
+                {senderObj.avatar ? (
                   <img
-                    src={sender.avatar}
-                    alt={sender.fullName}
+                    src={senderObj.avatar}
+                    alt={senderDisplayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-xs font-medium text-text-muted">
-                    {sender?.fullName?.[0]?.toUpperCase() ?? '?'}
+                    {senderDisplayName[0]?.toUpperCase() ?? '?'}
                   </span>
                 )}
               </div>

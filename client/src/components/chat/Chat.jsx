@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useConversations } from '@hooks/useConversations';
+import { useAuth } from '@hooks/useAuth';
 import ConversationList from './ConversationList';
 import ChatWindow from './ChatWindow';
 import EmptyChat from './EmptyChat';
@@ -8,6 +9,7 @@ import { cn } from '@utils/cn';
 
 export default function Chat() {
   const { id: activeId } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,16 +28,26 @@ export default function Chat() {
     if (location.state?.recipient) {
       const rec = location.state.recipient;
       const recId = rec._id || rec.id;
+      const currentId = user?._id || user?.id;
+
+      const canonicalChatId =
+        currentId && recId
+          ? `chat_${[currentId.toString(), recId.toString()].sort().join('_')}`
+          : `chat_${recId}`;
+
       const existing = conversations.find(
-        (c) => c.participant?._id === recId || c._id === recId
+        (c) =>
+          c._id === canonicalChatId ||
+          c._id === `chat_${recId}` ||
+          c.participant?._id === recId
       );
 
       if (existing) {
         navigate(`/chat/${existing._id}`, { replace: true, state: {} });
       } else {
-        const provChatId = `chat_${recId}`;
         setActiveRecipient({
-          _id: provChatId,
+          _id: canonicalChatId,
+          recipientId: recId,
           participant: {
             _id: recId,
             name: rec.name || rec.fullName || 'Host',
@@ -49,7 +61,7 @@ export default function Chat() {
         });
       }
     }
-  }, [location.state, conversations, navigate]);
+  }, [location.state, conversations, user, navigate]);
 
   const activeConversation =
     conversations.find((c) => c._id === activeId) ?? activeRecipient ?? null;

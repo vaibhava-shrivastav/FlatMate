@@ -1,14 +1,29 @@
 const mongoose = require("mongoose");
 const Message = require("../models/Message");
+const User = require("../models/User");
 
 exports.getChatHistory = async (req, res) => {
   try {
     const { chatId } = req.params;
     const messages = await Message.find({ chatId })
       .sort({ createdAt: 1 })
-      .populate("senderId", "name avatar")
+      .populate("senderId", "name email avatar role")
       .populate("participants", "name email avatar role");
-    res.status(200).json({ messages });
+
+    const formatted = messages.map((m) => {
+      const obj = m.toObject();
+      const senderObj =
+        obj.senderId && typeof obj.senderId === "object"
+          ? obj.senderId
+          : { _id: obj.senderId, name: "User" };
+      return {
+        ...obj,
+        sender: senderObj,
+        senderId: senderObj,
+      };
+    });
+
+    res.status(200).json({ messages: formatted });
   } catch (err) {
     res.status(500).json({ message: "Could not fetch chat history.", error: err.message });
   }
@@ -17,9 +32,15 @@ exports.getChatHistory = async (req, res) => {
 exports.getUserChats = async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.user.id);
+    const userIdStr = req.user.id.toString();
 
+    // Query messages where user is a participant, sender, or chatId contains user's ID
     const messages = await Message.find({
-      $or: [{ participants: userId }, { senderId: userId }],
+      $or: [
+        { participants: userId },
+        { senderId: userId },
+        { chatId: { $regex: userIdStr } },
+      ],
     })
       .sort({ createdAt: -1 })
       .populate("participants", "name email avatar role")
@@ -30,24 +51,34 @@ exports.getUserChats = async (req, res) => {
     for (const msg of messages) {
       if (chatMap.has(msg.chatId)) continue;
 
-      const participants = [
+      const allParticipants = [
         ...(msg.participants || []).filter(Boolean),
-        ...(msg.senderId ? [msg.senderId] : []),
+        ...(msg.senderId && typeof msg.senderId === "object" ? [msg.senderId] : []),
       ];
-      const uniqueParticipants = participants.filter(
-        (participant, index, list) =>
-          participant._id &&
-          list.findIndex((item) => item._id?.toString() === participant._id.toString()) === index
+
+      // Find the other user in this conversation
+      let otherParticipant = allParticipants.find(
+        (p) => p._id && p._id.toString() !== userIdStr
       );
-      const otherParticipant = uniqueParticipants.find(
-        (participant) => participant._id.toString() !== req.user.id
-      );
+
+      // If still missing, check if chatId has the other user's ID: e.g. chat_ID1_ID2
+      if (!otherParticipant && msg.chatId) {
+        const clean = msg.chatId.replace(/^chat_/, "");
+        const parts = clean.split("_");
+        const otherId = parts.find((p) => p !== userIdStr && mongoose.Types.ObjectId.isValid(p));
+        if (otherId) {
+          try {
+            const found = await User.findById(otherId).select("name email avatar role");
+            if (found) otherParticipant = found;
+          } catch {}
+        }
+      }
 
       chatMap.set(msg.chatId, {
         _id: msg.chatId,
         participant: otherParticipant || {
           _id: "unknown",
-          name: "Roommate Host",
+          name: "Roommate",
         },
         lastMessage: {
           text: msg.text,

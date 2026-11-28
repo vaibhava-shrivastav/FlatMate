@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '@services/api';
+import { getSocket } from '@services/socket';
 import { resolveApiError } from '@utils/authHelpers';
 
 export function useConversations() {
@@ -31,7 +32,24 @@ export function useConversations() {
 
   useEffect(() => {
     fetchConversations();
-    return () => abortRef.current?.abort();
+
+    const socket = getSocket();
+    if (!socket) return () => abortRef.current?.abort();
+
+    const onIncomingUpdate = () => {
+      fetchConversations();
+    };
+
+    socket.on('receiveMessage', onIncomingUpdate);
+    socket.on('receive_message', onIncomingUpdate);
+    socket.on('conversationUpdated', onIncomingUpdate);
+
+    return () => {
+      socket.off('receiveMessage', onIncomingUpdate);
+      socket.off('receive_message', onIncomingUpdate);
+      socket.off('conversationUpdated', onIncomingUpdate);
+      abortRef.current?.abort();
+    };
   }, [fetchConversations]);
 
   const updateLastMessage = useCallback((conversationId, message) => {

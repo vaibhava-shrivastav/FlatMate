@@ -3,7 +3,7 @@ import api from '@services/api';
 import { getSocket } from '@services/socket';
 import { resolveApiError } from '@utils/authHelpers';
 
-export function useMessages(conversationId) {
+export function useMessages(conversationId, recipientId) {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,8 +46,13 @@ export function useMessages(conversationId) {
     socket.emit('joinChat', conversationId);
 
     const onMessage = (message) => {
-      setMessages((prev) => [...prev, message]);
-      setTypingUsers((prev) => prev.filter((u) => u !== message.sender._id));
+      setMessages((prev) => {
+        // Prevent duplicate messages if already present
+        if (prev.some((m) => m._id === message._id)) return prev;
+        return [...prev, message];
+      });
+      const senderId = message.sender?._id || message.senderId?._id || message.senderId;
+      setTypingUsers((prev) => prev.filter((u) => u !== senderId));
     };
 
     const onTyping = ({ userId }) => {
@@ -63,11 +68,13 @@ export function useMessages(conversationId) {
     };
 
     socket.on('receiveMessage', onMessage);
+    socket.on('receive_message', onMessage);
     socket.on('user_typing', onTyping);
     socket.on('user_stop_typing', onStopTyping);
 
     return () => {
       socket.off('receiveMessage', onMessage);
+      socket.off('receive_message', onMessage);
       socket.off('user_typing', onTyping);
       socket.off('user_stop_typing', onStopTyping);
       clearTimeout(typingTimerRef.current);
@@ -87,14 +94,19 @@ export function useMessages(conversationId) {
 
       setIsSending(true);
       try {
-        socket.emit('sendMessage', { chatId: conversationId, text: text.trim() });
+        socket.emit('sendMessage', {
+          chatId: conversationId,
+          text: text.trim(),
+          recipientId,
+          participants: recipientId ? [recipientId] : [],
+        });
       } catch (err) {
         setError('Failed to send message. Please try again.');
       } finally {
         setIsSending(false);
       }
     },
-    [conversationId]
+    [conversationId, recipientId]
   );
 
   const emitTyping = useCallback(() => {
