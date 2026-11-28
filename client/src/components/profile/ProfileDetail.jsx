@@ -107,23 +107,23 @@ export default function ProfileDetail({ listingId: propListingId }) {
         };
 
       try {
-        const [listingRes, compatRes] = await Promise.allSettled([
-          api.get(`/listings/${listingId}`),
-          api.get(`/matches/${listingId}`),
-        ]);
-
+        const listingRes = await api.get(`/listings/${listingId}`);
         if (cancelled) return;
 
-        if (listingRes.status === 'fulfilled' && listingRes.value?.data) {
-          const lData = listingRes.value.data.listing ?? listingRes.value.data;
-          setListing(lData || mockListing);
-        } else {
-          setListing(mockListing);
-        }
+        const lData = listingRes.data?.listing ?? listingRes.data;
+        setListing(lData || mockListing);
 
-        if (compatRes.status === 'fulfilled' && compatRes.value?.data) {
-          const cData = compatRes.value.data.compatibility ?? compatRes.value.data;
-          setCompatibility(cData || fallbackCompat);
+        const ownerId = lData?.owner?._id || (typeof lData?.owner === 'string' ? lData.owner : null);
+        if (ownerId) {
+          try {
+            const compatRes = await api.get(`/matches/${ownerId}`);
+            if (!cancelled && compatRes.data) {
+              const cData = compatRes.data.compatibility ?? compatRes.data;
+              setCompatibility(cData);
+            }
+          } catch {
+            if (!cancelled) setCompatibility(fallbackCompat);
+          }
         } else {
           setCompatibility(fallbackCompat);
         }

@@ -53,6 +53,7 @@ export default function AddListingModal({ isOpen, onClose, onCreated }) {
   ]);
   const [selectedImage, setSelectedImage] = useState(SAMPLE_ROOM_IMAGES[0]);
   const [customImageUrl, setCustomImageUrl] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -63,6 +64,13 @@ export default function AddListingModal({ isOpen, onClose, onCreated }) {
     setSelectedAmenities((prev) =>
       prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name]
     );
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      setUploadedFiles(Array.from(e.target.files));
+      setCustomImageUrl('');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -80,35 +88,67 @@ export default function AddListingModal({ isOpen, onClose, onCreated }) {
     setError('');
 
     const sector = GREATER_NOIDA_SECTORS[sectorIndex];
-    const imageUrl = customImageUrl.trim() || selectedImage;
-
-    const payload = {
-      title: title.trim(),
-      rent: Number(rent),
-      roomType,
-      availableFrom: new Date(availableFrom),
-      description: description.trim(),
-      amenities: selectedAmenities,
-      images: [imageUrl],
-      compatibility: 95,
-      location: {
-        type: 'Point',
-        coordinates: sector.coords,
-        area: sector.area,
-        city: 'Greater Noida',
-        address: address.trim() || `${sector.area}, Greater Noida, Uttar Pradesh`,
-      },
-      owner: {
-        _id: user?._id || 'user-current-session',
-        name: user?.name || user?.fullName || 'You (Host)',
-        role: 'HAS_ROOM',
-        isVerified: true,
-      },
-    };
 
     try {
-      const { data } = await api.post('/listings', payload);
-      const created = data.listing ?? data;
+      let created;
+      if (uploadedFiles.length > 0) {
+        // Multipart form-data upload via Multer & Cloudinary
+        const formData = new FormData();
+        formData.append('title', title.trim());
+        formData.append('rent', Number(rent));
+        formData.append('roomType', roomType);
+        formData.append('availableFrom', new Date(availableFrom).toISOString());
+        formData.append('description', description.trim());
+        formData.append('amenities', JSON.stringify(selectedAmenities));
+        formData.append(
+          'location',
+          JSON.stringify({
+            type: 'Point',
+            coordinates: sector.coords,
+            area: sector.area,
+            city: 'Greater Noida',
+            address: address.trim() || `${sector.area}, Greater Noida, Uttar Pradesh`,
+          })
+        );
+        uploadedFiles.forEach((file) => {
+          formData.append('images', file);
+        });
+
+        const { data } = await api.post('/listings', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        created = data.listing ?? data;
+      } else {
+        // JSON payload with selected sample image or URL
+        const imageUrl = customImageUrl.trim() || selectedImage;
+        const payload = {
+          title: title.trim(),
+          rent: Number(rent),
+          roomType,
+          availableFrom: new Date(availableFrom),
+          description: description.trim(),
+          amenities: selectedAmenities,
+          images: [imageUrl],
+          compatibility: 95,
+          location: {
+            type: 'Point',
+            coordinates: sector.coords,
+            area: sector.area,
+            city: 'Greater Noida',
+            address: address.trim() || `${sector.area}, Greater Noida, Uttar Pradesh`,
+          },
+          owner: {
+            _id: user?._id || 'user-current-session',
+            name: user?.name || user?.fullName || 'You (Host)',
+            role: 'HAS_ROOM',
+            isVerified: true,
+          },
+        };
+
+        const { data } = await api.post('/listings', payload);
+        created = data.listing ?? data;
+      }
+
       onCreated(created);
       onClose();
     } catch (err) {
@@ -269,9 +309,28 @@ export default function AddListingModal({ isOpen, onClose, onCreated }) {
             </div>
           </div>
 
+          {/* File Upload for Room Photos */}
+          <div className="flex flex-col gap-1.5 pt-1">
+            <label className="text-xs font-medium text-text flex items-center justify-between">
+              <span>Upload Photos from Device (Cloudinary)</span>
+              {uploadedFiles.length > 0 && (
+                <span className="text-[11px] text-primary font-semibold">
+                  {uploadedFiles.length} photo(s) selected
+                </span>
+              )}
+            </label>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFileChange}
+              className="text-xs text-text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+            />
+          </div>
+
           {/* Choose Room Preview Photo */}
           <div className="flex flex-col gap-1.5 pt-1">
-            <label className="text-xs font-medium text-text">Select Room Photo</label>
+            <label className="text-xs font-medium text-text">Or Choose a Sample Photo</label>
             <div className="grid grid-cols-4 gap-2">
               {SAMPLE_ROOM_IMAGES.map((url) => {
                 const isSelected = selectedImage === url && !customImageUrl;

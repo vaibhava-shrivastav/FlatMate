@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Search,
@@ -12,6 +12,7 @@ import {
   Clock,
   Sparkles,
 } from 'lucide-react';
+import api from '@services/api';
 import { useAuth } from '@hooks/useAuth';
 import { MOCK_LISTINGS } from '@data/mockListings';
 import ListingCard from '@components/dashboard/ListingCard';
@@ -87,7 +88,24 @@ export default function HomePage() {
     navigate(`/dashboard?search=${encodeURIComponent(loc)}`);
   };
 
-  const featuredListings = MOCK_LISTINGS.slice(0, 3);
+  const [featuredListings, setFeaturedListings] = useState(MOCK_LISTINGS.slice(0, 3));
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/listings')
+      .then(({ data }) => {
+        if (!cancelled) {
+          const list = data?.listings ?? data;
+          if (Array.isArray(list) && list.length > 0) {
+            setFeaturedListings(list.slice(0, 3));
+          }
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">
