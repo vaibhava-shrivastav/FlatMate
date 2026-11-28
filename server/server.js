@@ -1,7 +1,15 @@
 require("dotenv").config();
 
 // ── Validate required environment variables ──────────────────────────
-const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET", "CLIENT_URL"];
+const REQUIRED_ENV = [
+  "MONGO_URI",
+  "JWT_SECRET",
+  "CLIENT_URL",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
+  "GEMINI_API_KEY",
+];
 const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missing.length) {
   console.error(`❌ Missing required env vars: ${missing.join(", ")}`);
@@ -24,8 +32,27 @@ const matchRoutes = require("./routes/matchRoutes");
 
 const registerChatSocket = require("./sockets/chatSocket");
 
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:3000",
+].filter(Boolean);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    }
+  },
+  credentials: true,
+};
+
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
@@ -52,7 +79,7 @@ if (process.env.NODE_ENV === "production") {
 app.use(errorMiddleware);
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: process.env.CLIENT_URL, credentials: true } });
+const io = new Server(server, { cors: corsOptions });
 registerChatSocket(io);
 
 const PORT = process.env.PORT || 5000;
