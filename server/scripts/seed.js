@@ -332,27 +332,10 @@ async function seed({ manageConnection = true } = {}) {
 
     console.log(`Ensured ${createdUsers.length} Greater Noida demo hosts exist.`);
 
-<<<<<<< HEAD
-// In manual mode, clear old demo listings only; skip if production data exists
-if (manageConnection) {
-  const existingCount = await Listing.countDocuments();
-  if (existingCount > 0) {
-    console.log(`Found ${existingCount} existing listings. Skipping seed to preserve data.`);
-    console.log("Use --force to clear and reseed: FORCE_SEED=1 node scripts/seed.js");
-    if (!process.env.FORCE_SEED) {
-      await mongoose.disconnect();
-      return;
-    }
-  }
-  await Listing.deleteMany({});
-  console.log("Cleared old listings (FORCE_SEED enabled).");
-}
-=======
-    // Clear only listings owned by the five demo hosts
-    const demoHostIds = createdUsers.slice(0, 5).map((user) => user._id);
+    // Clear only listings owned by demo hosts so user-created listings are preserved
+    const demoHostIds = createdUsers.map((user) => user._id);
     await Listing.deleteMany({ owner: { $in: demoHostIds } });
     console.log("Cleared previous demo host listings.");
->>>>>>> a3344aa (Fix Member 3 AI matching and demo seed data)
 
     // Insert Greater Noida demo listings
     const listingsToInsert = demoListingsData.map((item) => {
