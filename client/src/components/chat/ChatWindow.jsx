@@ -12,6 +12,9 @@ export default function ChatWindow({ conversation, onBack, showBack }) {
   const { user } = useAuth();
   const bottomRef = useRef(null);
 
+  const participant = conversation.participant;
+  const recipientId = participant?._id || conversation.recipientId;
+
   const {
     messages,
     isLoading,
@@ -22,14 +25,13 @@ export default function ChatWindow({ conversation, onBack, showBack }) {
     emitTyping,
     emitStopTyping,
     retry,
-  } = useMessages(conversation._id);
+  } = useMessages(conversation._id, recipientId);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, typingUsers]);
 
-  const participant = conversation.participant;
   const isTyping = typingUsers.length > 0;
 
   return (
@@ -62,7 +64,9 @@ export default function ChatWindow({ conversation, onBack, showBack }) {
               <MessageBubble
                 key={message._id}
                 message={message}
-                isOwn={message.sender._id === user?._id}
+                isOwn={
+                  (message.sender?._id || message.senderId?._id || message.senderId) === user?._id
+                }
                 showAvatar={
                   index === 0 ||
                   messages[index - 1]?.sender._id !== message.sender._id
