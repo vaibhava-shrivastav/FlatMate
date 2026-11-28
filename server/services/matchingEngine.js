@@ -28,27 +28,42 @@ async function findCandidates(user) {
     user.location.type === "Point" &&
     Array.isArray(user.location.coordinates) &&
     user.location.coordinates.length === 2 &&
+    user.location.coordinates.every(Number.isFinite) &&
     !(user.location.coordinates[0] === 0 && user.location.coordinates[1] === 0);
 
   const oppositeRole =
     user.role === "SEARCHING_ROOM" ? "HAS_ROOM" : "SEARCHING_ROOM";
 
-  const query = {
+  const baseQuery = {
     _id: { $ne: user._id },
     role: oppositeRole,
     onboardingComplete: true,
   };
 
   if (hasValidLocation) {
-    query.location = {
-      $near: {
-        $geometry: user.location,
-        $maxDistance: 15000,
-      },
-    };
+    try {
+      const geoQuery = {
+        ...baseQuery,
+        location: {
+          $near: {
+            $geometry: user.location,
+            $maxDistance: 25000,
+          },
+        },
+      };
+
+      const geoCandidates = await User.find(geoQuery).limit(15);
+
+      if (geoCandidates.length > 0) {
+        return geoCandidates;
+      }
+    } catch (err) {
+      console.error("Geospatial candidate search failed:", err.message);
+    }
   }
 
-  return User.find(query).limit(20);
+  // Fallback: search by opposite role without geographic filtering
+  return User.find(baseQuery).limit(15);
 }
 
 // ---- Step 2: Get a match's compatibility, using cache first ----

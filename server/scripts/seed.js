@@ -100,8 +100,45 @@ const demoUsers = [
       coordinates: [77.428, 28.605],
     },
   },
+  {
+    name: "Priya Mehra",
+    email: "priya.mehra@example.com",
+    role: "SEARCHING_ROOM",
+    budget: 9000,
+    onboardingComplete: true,
+    habitVector: {
+      sleepSchedule: 7,
+      cleanliness: 8,
+      smoking: 0,
+      cooking: 7,
+      guests: 5,
+      noise: 3,
+    },
+    location: {
+      type: "Point",
+      coordinates: [77.495, 28.46],
+    },
+  },
+  {
+    name: "Aman Verma",
+    email: "aman.verma@example.com",
+    role: "SEARCHING_ROOM",
+    budget: 7000,
+    onboardingComplete: true,
+    habitVector: {
+      sleepSchedule: 6,
+      cleanliness: 7,
+      smoking: 0,
+      cooking: 8,
+      guests: 4,
+      noise: 4,
+    },
+    location: {
+      type: "Point",
+      coordinates: [77.488, 28.472],
+    },
+  },
 ];
-
 const demoListingsData = [
   {
     userIndex: 0,
@@ -271,7 +308,7 @@ async function seed({ manageConnection = true } = {}) {
       console.log("Connected to MongoDB for seeding Greater Noida dataset...");
     }
 
-    const passwordHash = await bcrypt.hash("demo12345", 10);
+    const passwordHash = await bcrypt.hash("demoPassword123", 10);
 
     // Upsert demo users
     const createdUsers = [];
@@ -283,17 +320,39 @@ async function seed({ manageConnection = true } = {}) {
           password: passwordHash,
           isVerified: true,
         });
-      } else {
-        await User.updateOne({ email: u.email }, { ...u, isVerified: true });
+            } else {
+        user = await User.findOneAndUpdate(
+          { email: u.email },
+          { $set: { ...u, password: passwordHash, isVerified: true } },
+          { new: true }
+        );
       }
       createdUsers.push(user);
     }
 
     console.log(`Ensured ${createdUsers.length} Greater Noida demo hosts exist.`);
 
-    // Clear previous listings so only Greater Noida listings are present
-    await Listing.deleteMany({});
-    console.log("Cleared old listings.");
+<<<<<<< HEAD
+// In manual mode, clear old demo listings only; skip if production data exists
+if (manageConnection) {
+  const existingCount = await Listing.countDocuments();
+  if (existingCount > 0) {
+    console.log(`Found ${existingCount} existing listings. Skipping seed to preserve data.`);
+    console.log("Use --force to clear and reseed: FORCE_SEED=1 node scripts/seed.js");
+    if (!process.env.FORCE_SEED) {
+      await mongoose.disconnect();
+      return;
+    }
+  }
+  await Listing.deleteMany({});
+  console.log("Cleared old listings (FORCE_SEED enabled).");
+}
+=======
+    // Clear only listings owned by the five demo hosts
+    const demoHostIds = createdUsers.slice(0, 5).map((user) => user._id);
+    await Listing.deleteMany({ owner: { $in: demoHostIds } });
+    console.log("Cleared previous demo host listings.");
+>>>>>>> a3344aa (Fix Member 3 AI matching and demo seed data)
 
     // Insert Greater Noida demo listings
     const listingsToInsert = demoListingsData.map((item) => {
